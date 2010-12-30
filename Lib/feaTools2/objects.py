@@ -609,8 +609,6 @@ class GSUBSubtable(object):
         return self._target
 
     def _set_target(self, value):
-        if not isinstance(value, ClassReference):
-            value = Class(value)
         self._target = value
 
     target = property(_get_target, _set_target)
@@ -619,112 +617,11 @@ class GSUBSubtable(object):
         return self._substitution
 
     def _set_substitution(self, value):
-        if not isinstance(value, ClassReference):
-            value = Class(value)
         self._substitution = value
 
     substitution = property(_get_substitution, _set_substitution)
 
-    # writing
-
-    def write(self, writer):
-        if self.type == 1:
-            self._writeType1(writer)
-        elif self.type == 2:
-            self._writeType2(writer)
-        elif self.type == 3:
-            self._writeType3(writer)
-        elif self.type == 4:
-            self._writeType4(writer)
-        elif self.type == 5:
-            self._writeType5(writer)
-        elif self.type == 6:
-            self._writeType6(writer)
-        elif self.type == 7:
-            self._writeType7(writer)
-
-    def _writeType1(self, writer):
-        if isinstance(self.target, ClassReference):
-            target = [self.target.name]
-        else:
-            target = list(self.target)
-        if isinstance(self.substitution, ClassReference):
-            substitution = [self.substitution.name]
-        else:
-            substitution = list(self.substitution)
-        writer.gsubSubtable([target], [substitution], self.type)
-
-    def _writeType3(self, writer):
-        for index, target in enumerate(self.target):
-            target = [target]
-            substitution  = self.substitution[index]
-            assert isinstance(substitution, Alternates)
-            writer.gsubSubtable([target], [list(substitution)], self.type)
-
-    def _writeType4(self, writer):
-        for index, target in enumerate(self.target):
-            assert isinstance(target, Ligature)
-            target = list(target)
-            target = [[i] for i in target]
-            substitution = self.substitution[index]
-            assert isinstance(substitution, basestring)
-            substitution = [substitution]
-            writer.gsubSubtable(target, [substitution], self.type)
-
-    def _writeType6(self, writer):
-        # backtrack
-        backtrack = []
-        for item in self.backtrack:
-            if isinstance(item, basestring):
-                backtrack.append([item])
-            elif isinstance(item, ClassReference):
-                backtrack.append([item.name])
-            elif isinstance(item, Class):
-                backtrack.append(list(item))
-            else:
-                raise NotImplementedError, "Unknown backtrack type: %s" % repr(type(item))
-        # lookahead
-        lookahead = []
-        for item in self.lookahead:
-            if isinstance(item, basestring):
-                lookahead.append([item])
-            elif isinstance(item, ClassReference):
-                lookahead.append([item.name])
-            elif isinstance(item, Class):
-                lookahead.append(list(item))
-            else:
-                raise NotImplementedError, "Unknown lookahead type: %s" % repr(type(item))
-        # target
-        if isinstance(self.target, ClassReference):
-            target = [[self.target.name]]
-        else:
-            target = []
-            for item in self.target:
-                if isinstance(item, basestring):
-                    target.append([item])
-                elif isinstance(item, Ligature):
-                    target += [[i] for i in item]
-                elif isinstance(item, Class):
-                    target.append(list(item))
-                else:
-                    raise NotImplementedError, "Unknown target type: %s" % repr(type(item))
-        # substitution
-        if isinstance(self.substitution, ClassReference):
-            substitution = [self.substitution.name]
-        else:
-            substitution = []
-            for item in self.substitution:
-                if isinstance(item, basestring):
-                    substitution.append([item])
-                elif isinstance(item, Ligature):
-                    substitution += [[i] for i in item]
-                elif isinstance(item, Class):
-                    substitution.append(list(item))
-                else:
-                    raise NotImplementedError, "Unknown substitution type: %s" % repr(type(item))
-        writer.gsubSubtable(target, substitution, self.type, backtrack=backtrack, lookahead=lookahead)
-
-    # loading
+    # type routing
 
     def _load(self, table, tableTag, type, subtable):
         self.type = type
@@ -743,55 +640,105 @@ class GSUBSubtable(object):
         elif type == 7:
             self._loadType7(subtable)
 
+    # write
+
+    def write(self, writer):
+        target = [self._flattenClassReferences(i) for i in self.target]
+        substitution = [self._flattenClassReferences(i) for i in self.substitution]
+        backtrack = self._flattenClassReferences(self.backtrack)
+        lookahead = self._flattenClassReferences(self.lookahead)
+        writer.gsubSubtable(target, substitution, self.type, backtrack=backtrack, lookahead=lookahead)
+
+    def _flattenClassReferences(self, sequence):
+        newSequence = []
+        for group in sequence:
+            newGroup = Class()
+            for member in group:
+                if isinstance(member, ClassReference):
+                    member = member.name
+                newGroup.append(member)
+            newSequence.append(newGroup)
+        return newSequence
+
+    # type 1
+
     def _loadType1(self, subtable):
-        target = []
-        substitution = []
-        for t, r in sorted(subtable.mapping.items()):
-            target.append(t)
-            substitution.append(r)
+        targetClass = Class()
+        substitutionClass = Class()
+        for t, s in sorted(subtable.mapping.items()):
+            targetClass.append(t)
+            substitutionClass.append(s)
+        target = [Sequence([targetClass])]
+        substitution = [Sequence([substitutionClass])]
         self.target = target
         self.substitution = substitution
 
-    def _loadType2(self, subtable):
-        raise NotImplementedError
+    # type 2
+
+    # type 3
 
     def _loadType3(self, subtable):
         target = []
         substitution = []
-        for t, r in sorted(subtable.alternates.items()):
+        for t, s in sorted(subtable.alternates.items()):
+            # wrap it in a class
+            t = Class([t])
+            # wrap the class in a sequence
+            t = Sequence([t])
+            # store
             target.append(t)
-            substitution.append(Alternates(r))
+            # wrap it in a class
+            s = Class(s)
+            # wrap the class in a sequence
+            s = Sequence([s])
+            # store
+            substitution.append(s)
         self.target = target
         self.substitution = substitution
+
+    # type 4
 
     def _loadType4(self, subtable):
         target = []
         substitution = []
         for firstGlyph, parts in sorted(subtable.ligatures.items()):
             for part in parts:
-                t = Ligature([firstGlyph] + part.Component)
-                r = part.LigGlyph
-                assert t not in target
+                # get the parts
+                t = [firstGlyph] + part.Component
+                # wrap the parts in classes
+                t = [Class([i]) for i in t]
+                # wrap the parts in a sequence
+                t = Sequence(t)
+                # store
                 target.append(t)
-                substitution.append(r)
+                # get the substitution
+                s = part.LigGlyph
+                # wrap it in a class
+                s = Class([s])
+                # wrap the class in a sequence
+                s = Sequence([s])
+                # store
+                substitution.append(s)
         self.target = target
         self.substitution = substitution
 
-    def _loadType5(self, subtable):
-        raise NotImplementedError
+    # type 5
+
+    # type 6
 
     def _loadType6(self, table, tableTag, subtable):
         assert subtable.Format == 3, "Stop being lazy."
         backtrack = [readCoverage(i) for i in reversed(subtable.BacktrackCoverage)]
         lookahead = [readCoverage(i) for i in subtable.LookAheadCoverage]
         input = [readCoverage(i) for i in subtable.InputCoverage]
-        target = []
-        substitution = []
         # the "ignore" rule generates subtables with an empty SubstLookup
         if not subtable.SubstLookupRecord:
-            target = input
+            target = [Sequence(input)]
             substitution = []
+        # a regular contextual rule
         else:
+            target = []
+            substitution = []
             assert len(subtable.SubstLookupRecord) == 1, "Does this ever happen?"
             for substLookup in subtable.SubstLookupRecord:
                 index = substLookup.LookupListIndex
@@ -804,102 +751,80 @@ class GSUBSubtable(object):
                 # subtable. i can't think of a way to do this with the
                 # .fea syntax, so i'm not worrying about it right now.
                 assert len(lookup.subtables) == 1, "Does this ever happen?"
-                for index, t in enumerate(lookup.subtables[0].target):
+                for sequenceIndex, targetSequence in enumerate(lookup.subtables[0].target):
+                    substitutionSequence = lookup.subtables[0].substitution[sequenceIndex]
                     if lookup.type == 1:
                         assert len(input) == 1, "Does this ever happen?"
-                        if t not in input[0]:
-                            continue
+                        newTargetSequence = Sequence()
+                        newSubstitutionSequence = Sequence()
+                        for classIndex, targetClass in enumerate(targetSequence):
+                            newTargetClass = Class()
+                            newSubstitutionClass = Class()
+                            for memberIndex, t in enumerate(targetClass):
+                                if t in input[0]:
+                                    newTargetClass.append(t)
+                                    s = substitutionSequence[classIndex][memberIndex]
+                                    newSubstitutionClass.append(s)
+                            if newTargetClass:
+                                newTargetSequence.append(newTargetClass)
+                                newSubstitutionSequence.append(newSubstitutionClass)
                     elif lookup.type == 4:
-                        testTarget = [Class(i) for i in t]
-                        if testTarget != input:
-                            continue
+                        if targetSequence != input:
+                            print
+                            print "GSUB question"
+                            print targetSequence
+                            print input
+                            print
+                        else:
+                            newTargetSequence = targetSequence
+                            newSubstitutionSequence = substitutionSequence
                     else:
                         raise NotImplementedError
-                        testTarget = Class([t])
-                        if testTarget not in input:
-                            continue
-                    target.append(t)
-                    s = lookup.subtables[0].substitution[index]
-                    substitution.append(s)
+                    target.append(newTargetSequence)
+                    substitution.append(newSubstitutionSequence)
         self.backtrack = backtrack
         self.lookahead = lookahead
         self.target = target
         self.substitution = substitution
 
-    def _loadType7(self, subtable):
-        pass
-        #raise NotImplementedError
+    # type 7
 
     # compression
 
     def _findPotentialClasses(self):
-        if self.type in (3, 4):
-            return []
-        # otherwise go ahead
         candidates = []
-        for sequence in (self.backtrack, self.lookahead):
-            for candidate in sequence:
-                if isinstance(candidate, Class):
-                    if len(candidate) < 2:
-                        continue
-                    if candidate not in candidates:
-                        candidates.append(candidate)
-        targetCandidate = True
-        for member in self.target:
-            if not isinstance(member, basestring):
-                targetCandidate = False
-                break
-        if targetCandidate and len(self.target) > 1:
-            if self.target not in candidates:
-                candidates.append(self.target)
-        substitutionCandidate = True
-        if not self.substitution:
-            substitutionCandidate = False
-        else:
-            for member in self.substitution:
-                if not isinstance(member, basestring):
-                    substitutionCandidate = False
-                    break
-        if substitutionCandidate and len(self.substitution) > 1:
-            if self.substitution not in candidates:
-                candidates.append(self.substitution)
+        self._findPotentialClassesInSequence(self.backtrack, candidates)
+        self._findPotentialClassesInSequence(self.lookahead, candidates)
+        for sequence in self.target:
+            self._findPotentialClassesInSequence(sequence, candidates)
+        if self.type != 3:
+            for sequence in self.substitution:
+                self._findPotentialClassesInSequence(sequence, candidates)
         return candidates
 
+    def _findPotentialClassesInSequence(self, sequence, candidates):
+        for member in sequence:
+            if member not in candidates:
+                if len(member) > 1:
+                    candidates.append(tuple(member))
+
     def _populateClasses(self, classes):
-        if self.type in (3, 4):
-            return
-        # backtrack
-        backtrack = []
-        for member in self.backtrack:
-            className = classes.get(member)
-            if className is not None:
+        self.backtrack = self._populateClassesInSequence(self.backtrack, classes)
+        self.lookahead = self._populateClassesInSequence(self.lookahead, classes)
+        self.target = [self._populateClassesInSequence(i, classes) for i in self.target]
+        if self.type != 3:
+            self.substitution = [self._populateClassesInSequence(i, classes) for i in self.substitution]
+
+    def _populateClassesInSequence(self, sequence, classes):
+        newSequence = Sequence()
+        for member in sequence:
+            member = tuple(member)
+            if member in classes:
                 classReference = ClassReference()
-                classReference.name = className
-                member = classReference
-            backtrack.append(member)
-        self.backtrack = backtrack
-        # lookahead
-        lookahead = []
-        for member in self.lookahead:
-            className = classes.get(member)
-            if className is not None:
-                classReference = ClassReference()
-                classReference.name = className
-                member = classReference
-            lookahead.append(member)
-        self.lookahead = lookahead
-        # target
-        if self.target in classes:
-            className = classes.get(self.target)
-            classReference = ClassReference()
-            classReference.name = className
-            self.target = classReference
-        # substitution
-        if self.substitution in classes:
-            className = classes.get(self.substitution)
-            classReference = ClassReference()
-            classReference.name = className
-            self.substitution = classReference
+                classReference.name = classes[member]
+                member = Class([classReference])
+            newSequence.append(member)
+        return newSequence
 
     def __eq__(self, other):
         if self.backtrack != other.backtrack:
@@ -932,7 +857,7 @@ class Classes(dict): pass
 class Sequence(list): pass
 
 
-class Class(tuple): pass
+class Class(list): pass
 
 
 class ClassReference(object):
@@ -951,10 +876,10 @@ class ClassReference(object):
         return hash(s)
 
 
-class Alternates(tuple): pass
+class Alternates(list): pass
 
 
-class Ligature(tuple): pass
+class Ligature(list): pass
 
 
 # ---------

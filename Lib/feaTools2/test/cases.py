@@ -28,8 +28,8 @@ Lookup: TST2_TST1_1
     GSUBSubtable Type 1:
         backtrack: []
         lookahead: []
-        target: [[A]]
-        substitution: [[B]]
+        target: [[[A]]]
+        substitution: [[[B]]]
 Feature: TST1
     Script: DFLT
         Language: None
@@ -64,8 +64,8 @@ Lookup: TST2_TST1_1
     GSUBSubtable Type 1:
         backtrack: []
         lookahead: []
-        target: [[A]]
-        substitution: [[B]]
+        target: [[[A]]]
+        substitution: [[[B]]]
 Feature: TST1
     Script: DFLT
         Language: None
@@ -103,8 +103,8 @@ Lookup: TST2_TST1_1
     GSUBSubtable Type 1:
         backtrack: []
         lookahead: []
-        target: [[A]]
-        substitution: [[B]]
+        target: [[[A]]]
+        substitution: [[[B]]]
 Feature: TST1
     Script: DFLT
         Language: None
@@ -146,8 +146,8 @@ Lookup: TST2_TST1_1
     GSUBSubtable Type 1:
         backtrack: []
         lookahead: []
-        target: [[A]]
-        substitution: [[B]]
+        target: [[[A]]]
+        substitution: [[[B]]]
 Feature: TST2
     Script: DFLT
         Language: None
@@ -168,8 +168,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[C]]
-                    substitution: [[D]]
+                    target: [[[C]]]
+                    substitution: [[[D]]]
 """.strip()
 
 # ------------------------
@@ -203,8 +203,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B]]
+                    target: [[[A]]]
+                    substitution: [[[B]]]
             Lookup: TST1_2
                 LookupFlag:
                     rightToLeft: False
@@ -215,8 +215,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[B]]
-                    substitution: [[C]]
+                    target: [[[B]]]
+                    substitution: [[[C]]]
 """.strip()
 
 
@@ -252,8 +252,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B]]
+                    target: [[[A]]]
+                    substitution: [[[B]]]
     Script: cyrl
         Language: None
             Include Default: True
@@ -298,8 +298,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B]]
+                    target: [[[A]]]
+                    substitution: [[[B]]]
     Script: cyrl
         Language: None
             Include Default: True
@@ -313,8 +313,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[G]]
-                    substitution: [[H]]
+                    target: [[[G]]]
+                    substitution: [[[H]]]
     Script: latn
         Language: None
             Include Default: True
@@ -328,8 +328,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[C]]
-                    substitution: [[D]]
+                    target: [[[C]]]
+                    substitution: [[[D]]]
         Language: TRK
             Include Default: True
             Lookup: TST1_4
@@ -342,8 +342,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[E]]
-                    substitution: [[F]]
+                    target: [[[E]]]
+                    substitution: [[[F]]]
 """.strip()
 
 compressFeatureDefaultLanguageLookups3_fea = """
@@ -375,8 +375,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B]]
+                    target: [[[A]]]
+                    substitution: [[[B]]]
     Script: latn
         Language: None
             Include Default: True
@@ -392,8 +392,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[E]]
-                    substitution: [[F]]
+                    target: [[[E]]]
+                    substitution: [[[F]]]
 """.strip()
 
 # -----------
@@ -424,8 +424,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B]]
+                    target: [[[A]]]
+                    substitution: [[[B]]]
 """.strip()
 
 lookupFlag2_fea = """
@@ -452,8 +452,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B]]
+                    target: [[[A]]]
+                    substitution: [[[B]]]
 """.strip()
 
 lookupFlag3_fea = """
@@ -480,8 +480,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B]]
+                    target: [[[A]]]
+                    substitution: [[[B]]]
 """.strip()
 
 lookupFlag4_fea = """
@@ -508,8 +508,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B]]
+                    target: [[[A]]]
+                    substitution: [[[B]]]
 """.strip()
 
 lookupFlag5_fea = """
@@ -537,8 +537,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B]]
+                    target: [[[A]]]
+                    substitution: [[[B]]]
 """.strip()
 
 # -----------
@@ -568,8 +568,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B]]
+                    target: [[[A]]]
+                    substitution: [[[B]]]
 """.strip()
 
 gsubType12_fea = """
@@ -597,8 +597,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[@TST1_1]]
-                    substitution: [[@TST1_2]]
+                    target: [[[@TST1_1]]]
+                    substitution: [[[@TST1_2]]]
 """.strip()
 
 gsubType13_fea = """
@@ -628,8 +628,8 @@ Feature: TST1
                 GSUBSubtable Type 1:
                     backtrack: []
                     lookahead: []
-                    target: [[@TST1_1]]
-                    substitution: [[@TST1_2]]
+                    target: [[[@TST1_1]]]
+                    substitution: [[[@TST1_2]]]
 """.strip()
 
 # -----------
@@ -659,8 +659,8 @@ Feature: TST1
                 GSUBSubtable Type 3:
                     backtrack: []
                     lookahead: []
-                    target: [[A]]
-                    substitution: [[B C]]
+                    target: [[[A]]]
+                    substitution: [[[B C]]]
 """.strip()
 
 # -----------
@@ -690,8 +690,8 @@ Feature: TST1
                 GSUBSubtable Type 4:
                     backtrack: []
                     lookahead: []
-                    target: [[A] [B]]
-                    substitution: [[C]]
+                    target: [[[A] [B]]]
+                    substitution: [[[C]]]
 """.strip()
 
 gsubType42_fea = """
@@ -717,13 +717,8 @@ Feature: TST1
                 GSUBSubtable Type 4:
                     backtrack: []
                     lookahead: []
-                    target: [[A] [C]]
-                    substitution: [[D]]
-                GSUBSubtable Type 4:
-                    backtrack: []
-                    lookahead: []
-                    target: [[B] [C]]
-                    substitution: [[D]]
+                    target: [[[A] [C]] [[B] [C]]]
+                    substitution: [[[D]] [[D]]]
 """.strip()
 
 # -----------
@@ -753,8 +748,8 @@ Feature: TST1
                 GSUBSubtable Type 6:
                     backtrack: [[A] [B]]
                     lookahead: [[E] [F]]
-                    target: [[C]]
-                    substitution: [[D]]
+                    target: [[[C]]]
+                    substitution: [[[D]]]
 """.strip()
 
 gsubType62_fea = """
@@ -781,13 +776,13 @@ Feature: TST1
                 GSUBSubtable Type 6:
                     backtrack: [[A]]
                     lookahead: [[C]]
-                    target: [[B]]
-                    substitution: [[D]]
+                    target: [[[B]]]
+                    substitution: [[[D]]]
                 GSUBSubtable Type 6:
                     backtrack: [[A]]
                     lookahead: [[C]]
-                    target: [[E]]
-                    substitution: [[F]]
+                    target: [[[E]]]
+                    substitution: [[[F]]]
 """.strip()
 
 gsubType63_fea = """
@@ -814,13 +809,13 @@ Feature: TST1
                 GSUBSubtable Type 6:
                     backtrack: [[E]]
                     lookahead: [[G]]
-                    target: [[F]]
+                    target: [[[F]]]
                     substitution: []
                 GSUBSubtable Type 6:
                     backtrack: [[A]]
                     lookahead: [[C]]
-                    target: [[B]]
-                    substitution: [[D]]
+                    target: [[[B]]]
+                    substitution: [[[D]]]
 """.strip()
 
 gsubType64_fea = """
@@ -846,6 +841,6 @@ Feature: TST1
                 GSUBSubtable Type 6:
                     backtrack: [[A] [B]]
                     lookahead: [[F] [G]]
-                    target: [[C] [D]]
-                    substitution: [[E]]
+                    target: [[[C] [D]]]
+                    substitution: [[[E]]]
 """.strip()

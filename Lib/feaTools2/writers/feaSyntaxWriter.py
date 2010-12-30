@@ -96,15 +96,12 @@ class FeaSyntaxWriter(AbstractWriter):
 
     # flattening
 
-    def _flattenItem(self, item):
-        if isinstance(item, basestring):
-            return item
-        final = []
-        for i in item:
-            if not isinstance(i, basestring):
-                i = "[%s]" % self._flattenItem(i)
-            final.append(i)
-        return " ".join(final)
+    def _flattenClass(self, members):
+        return " ".join(members)
+
+    def _flattenSequence(self, members):
+        members = [self._flattenClass(i) for i in members]
+        return " ".join(members)
 
     # ---------
     # Filtering
@@ -351,7 +348,7 @@ class FeaSyntaxWriter(AbstractWriter):
     def _classDefinition(self, name, members):
         self._handleBreakBefore("classDefinition")
         text = [
-            "%s = [%s];" % (name, self._flattenItem(members))
+            "%s = [%s];" % (name, self._flattenClass(members))
         ]
         self._text += self._indentText(text)
         self._identifierStack.append("classDefinition")
@@ -542,66 +539,62 @@ class FeaSyntaxWriter(AbstractWriter):
         self._text += self._indentText(text)
         self._identifierStack.append("gsubSubtable")
 
-    def _writeGSUBSubtableType1(self, item):
-        target = item["target"][0]
-        substitution = item["substitution"][0]
-        text = [
-            "sub %s by %s;" % (self._flattenItem(target), self._flattenItem(substitution))
-        ]
+    def _writeGSUBSubtableGeneric(self, item):
+        text = []
+        for index, target in enumerate(item["target"]):
+            target = self._flattenSequence(target)
+            substitution = item["substitution"][index]
+            substitution = self._flattenSequence(substitution)
+            t = "sub %s by %s;" % (target, substitution)
+            text.append(t)
         return text
+
+    _writeGSUBSubtableType1 = _writeGSUBSubtableGeneric
 
     def _writeGSUBSubtableType3(self, item):
-        target = item["target"][0]
-        substitution = item["substitution"]
-        text = [
-            "sub %s from %s;" % (target, self._flattenItem(substitution))
-        ]
+        text = []
+        for index, target in enumerate(item["target"]):
+            target = self._flattenSequence(target)
+            substitution = item["substitution"][index]
+            substitution = self._flattenSequence(substitution)
+            t = "sub %s from [%s];" % (target, substitution)
+            text.append(t)
         return text
 
-    def _writeGSUBSubtableType4(self, item):
-        target = item["target"]
-        if not isinstance(target, basestring):
-            target = " ".join([self._flattenItem(i) for i in target])
-        substitution = item["substitution"][0]
-        text = [
-            "sub %s by %s;" % (target, self._flattenItem(substitution))
-        ]
-        return text
+    _writeGSUBSubtableType4 = _writeGSUBSubtableGeneric
 
     def _writeGSUBSubtableType6(self, item):
-        # lookahead is always a sequence
-        lookahead = item["lookahead"]
-        lookahead = " ".join([self._flattenItem(i) for i in lookahead])
-        # backtrack is always a sequence
-        backtrack = item["backtrack"]
-        backtrack = " ".join([self._flattenItem(i) for i in backtrack])
-        # target is always a sequence
-        target = item["target"]
-        target = " ".join([self._flattenItem(i) + "'" for i in target])
-        # substitution is either a sequence or nothing
-        substitution = item["substitution"]
-        isIgnore = False
-        if not substitution:
-            isIgnore = True
-        else:
-            substitution = " ".join([self._flattenItem(i) for i in substitution])
-        # write
         text = []
-        if isIgnore:
-            text += ["ignore sub"]
-        else:
-            text += ["sub"]
-        if backtrack:
-            text += [backtrack]
-        text += [target]
-        if lookahead:
-            text += [lookahead]
-        if not isIgnore:
-            text += ["by"] + [substitution]
-        text = " ".join(text) + ";"
-        text = [
-            text
-        ]
+        lookahead = item["lookahead"]
+        lookahead = self._flattenSequence(lookahead)
+        backtrack = item["backtrack"]
+        backtrack = self._flattenSequence(backtrack)
+        for index, target in enumerate(item["target"]):
+            newTarget = []
+            for member in target:
+                member = self._flattenClass(member) + "'"
+                newTarget.append(member)
+            target = " ".join(newTarget)
+            substitution = item["substitution"]
+            isIgnore = False
+            if not substitution:
+                isIgnore = True
+            else:
+                substitution = self._flattenSequence(substitution[index])
+            t = []
+            if isIgnore:
+                t += ["ignore sub"]
+            else:
+                t += ["sub"]
+            if backtrack:
+                t += [backtrack]
+            t += [target]
+            if lookahead:
+                t += [lookahead]
+            if not isIgnore:
+                t += ["by"] + [substitution]
+            t = " ".join(t) + ";"
+            text.append(t)
         return text
 
     # GPOS
