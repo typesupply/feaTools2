@@ -146,18 +146,21 @@ class Table(list):
 
     def _compressClasses(self):
         # find all potential classes
+        classOrder = []
         potentialClasses = {}
         for feature in self:
             candidates = feature._findPotentialClasses()
             for candidate in candidates:
                 if candidate not in potentialClasses:
                     potentialClasses[candidate] = []
+                    classOrder.append(candidate)
                 potentialClasses[candidate].append(feature.tag)
         # name the classes
         usedNames = set()
         classes = {}
         featureClasses = {}
-        for members, features in potentialClasses.items():
+        for members in classOrder:
+            features = potentialClasses[members]
             className = nameClass(features, members)
             counter = 1
             while 1:
@@ -302,9 +305,11 @@ class Feature(object):
     # compress classes
 
     def _findPotentialClasses(self):
-        candidates = set()
+        candidates = []
         for script in self.scripts:
-            candidates |= script._findPotentialClasses()
+            for candidate in script._findPotentialClasses():
+                if candidate not in candidates:
+                    candidates.append(candidate)
         return candidates
 
     def _populateClasses(self, allClasses, featureClasses):
@@ -354,9 +359,11 @@ class Script(object):
             language._populateFeatureLookups(flippedLookups, haveSeen)
 
     def _findPotentialClasses(self):
-        candidates = set()
+        candidates = []
         for language in self.languages:
-            candidates |= language._findPotentialClasses()
+            for candidate in language._findPotentialClasses():
+                if candidate not in candidates:
+                    candidates.append(candidate)
         return candidates
 
     def _populateClasses(self, classes):
@@ -419,11 +426,13 @@ class Language(object):
     # compress classes
 
     def _findPotentialClasses(self):
-        candidates = set()
+        candidates = []
         for lookup in self.lookups:
             if isinstance(lookup, LookupReference):
                 continue
-            candidates |= lookup._findPotentialClasses()
+            for candidate in lookup._findPotentialClasses():
+                if candidate not in candidates:
+                    candidates.append(candidate)
         return candidates
 
     def _populateClasses(self, classes):
@@ -465,9 +474,11 @@ class Lookup(object):
     # compression
 
     def _findPotentialClasses(self):
-        candidates = set()
+        candidates = []
         for subtable in self.subtables:
-            candidates |= subtable._findPotentialClasses()
+            for candidate in subtable._findPotentialClasses():
+                if candidate not in candidates:
+                    candidates.append(candidate)
         return candidates
 
     def _populateClasses(self, classes):
@@ -823,22 +834,24 @@ class GSUBSubtable(object):
 
     def _findPotentialClasses(self):
         if self.type in (3, 4):
-            return set()
+            return []
         # otherwise go ahead
-        candidates = set()
+        candidates = []
         for sequence in (self.backtrack, self.lookahead):
             for candidate in sequence:
                 if isinstance(candidate, Class):
                     if len(candidate) < 2:
                         continue
-                    candidates.add(candidate)
+                    if candidate not in candidates:
+                        candidates.append(candidate)
         targetCandidate = True
         for member in self.target:
             if not isinstance(member, basestring):
                 targetCandidate = False
                 break
         if targetCandidate and len(self.target) > 1:
-            candidates.add(self.target)
+            if self.target not in candidates:
+                candidates.append(self.target)
         substitutionCandidate = True
         if not self.substitution:
             substitutionCandidate = False
@@ -848,7 +861,8 @@ class GSUBSubtable(object):
                     substitutionCandidate = False
                     break
         if substitutionCandidate and len(self.substitution) > 1:
-            candidates.add(self.substitution)
+            if self.substitution not in candidates:
+                candidates.append(self.substitution)
         return candidates
 
     def _populateClasses(self, classes):

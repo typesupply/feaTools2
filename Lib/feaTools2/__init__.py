@@ -1,6 +1,5 @@
 """
 To Do:
-- classes should be named in the order in which they appear
 - lookup type 7
 - move _load to a function and a writer
 - merge GSUB and GPOS into one table. GDEF as well, i guess.
