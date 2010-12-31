@@ -53,12 +53,6 @@ class AbstractWriter(object):
     # GSUB
 
     def gsubSubtable(self, target, substitution, type, backtrack=[], lookahead=[]):
-        """
-        target is an ordered sequence of lists of glyph/class names
-        substitution is an ordered sequence of lists of glyph/class names
-        backtrack is an ordered sequence of lists of glyph/class names
-        lookahead is an ordered sequence of lists of glyph/class names
-        """
         raise NotImplementedError
 
     # GPOS
