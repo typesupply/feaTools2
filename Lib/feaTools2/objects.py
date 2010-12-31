@@ -5,6 +5,8 @@ class Table(list):
         self.classes = Classes()
         self.lookups = []
 
+    # writing
+
     def write(self, writer):
         # language systems
         languageSystems = set()
@@ -31,6 +33,27 @@ class Table(list):
         for feature in self:
             featureWriter = writer.newFeature(feature.tag)
             feature.write(featureWriter)
+
+    # manipulation
+
+    def removeGlyphs(self, glyphNames):
+        self.classes.removeGlyphs(glyphNames)
+        for lookup in self.lookups:
+            lookup.removeGlyphs(glyphNames)
+        for feature in self:
+            feature.removeGlyphs(glyphNames)
+
+    def renameGlyphs(self, glyphMapping):
+        self.classes.renameGlyphs(glyphMapping)
+        for lookup in self.lookups:
+            lookup.renameGlyphs(glyphMapping)
+        for feature in self:
+            feature.renameGlyphs(glyphMapping)
+
+    def cleanup(self):
+        pass
+
+    # loading
 
     def _load(self, table, tableTag):
         # first pass through the features
@@ -88,6 +111,8 @@ class Table(list):
             self.append(feature)
         # compress
         self._compress()
+
+    # compression
 
     def _compress(self):
         self._compressLookups()
@@ -172,7 +197,7 @@ class Table(list):
                     break
             classes[members] = className
             if len(features) > 1:
-                self.classes[className] = members
+                self.classes[className] = Class(members)
             else:
                 feature = features[0]
                 if feature not in featureClasses:
@@ -189,6 +214,8 @@ class Feature(object):
         self.tag = None
         self.classes = Classes()
         self.scripts = []
+
+    # writing
 
     def write(self, writer):
         # classes
@@ -209,6 +236,21 @@ class Feature(object):
                 script.tag = scriptTag
                 self.scripts.append(script)
             script._load(table, tableTag, languageTag, lookupRecords)
+
+    # manipulation
+
+    def removeGlyphs(self, glyphNames):
+        self.classes.removeGlyphs(glyphNames)
+        for script in self.scripts:
+            script.removeGlyphs(glyphNames)
+
+    def renameGlyphs(self, glyphMapping):
+        self.classes.renameGlyphs(glyphMapping)
+        for script in self.scripts:
+            script.renameGlyphs(glyphMapping)
+
+    def cleanup(self):
+        pass
 
     # compress lookups
 
@@ -313,7 +355,10 @@ class Feature(object):
         return candidates
 
     def _populateClasses(self, allClasses, featureClasses):
-        self.classes.update(featureClasses)
+        new = {}
+        for name, members in featureClasses.items():
+            new[name] = Class(members)
+        self.classes.update(new)
         for script in self.scripts:
             script._populateClasses(allClasses)
 
@@ -323,6 +368,8 @@ class Script(object):
     def __init__(self):
         self.tag = None
         self.languages = []
+
+    # writing
 
     def write(self, writer):
         writer.script(self.tag)
@@ -337,6 +384,19 @@ class Script(object):
         language.tag = languageTag
         language._load(table, tableTag, lookupRecords)
         self.languages.append(language)
+
+    # manipulation
+
+    def removeGlyphs(self, glyphNames):
+        for language in self.languages:
+            language.removeGlyphs(glyphNames)
+
+    def renameGlyphs(self, glyphMapping):
+        for language in self.languages:
+            language.renameGlyphs(glyphMapping)
+
+    def cleanup(self):
+        pass
 
     # compression
 
@@ -378,6 +438,8 @@ class Language(object):
         self.includeDefault = True
         self.lookups = []
 
+    # writing
+
     def write(self, writer):
         writer.language(self.tag, includeDefault=self.includeDefault)
         # lookups
@@ -395,6 +457,19 @@ class Language(object):
             lookup = Lookup()
             lookup._load(table, tableTag, lookupRecord)
             self.lookups.append(lookup)
+
+    # manipulation
+
+    def removeGlyphs(self, glyphNames):
+        for lookup in self.lookups:
+            lookup.removeGlyphs(glyphNames)
+
+    def renameGlyphs(self, glyphMapping):
+        for lookup in self.lookups:
+            lookup.renameGlyphs(glyphMapping)
+
+    def cleanup(self):
+        pass
 
     # compress lookups
 
@@ -450,6 +525,8 @@ class Lookup(object):
         self.flag = LookupFlag()
         self.subtables = []
 
+    # writing
+
     def write(self, writer):
         # lookup flag
         self.flag.write(writer)
@@ -471,6 +548,19 @@ class Lookup(object):
             subtable._load(table, tableTag, self.type, subtableRecord)
             self.subtables.append(subtable)
 
+    # manipulation
+
+    def removeGlyphs(self, glyphNames):
+        for subtable in self.subtables:
+            subtable.removeGlyphs(glyphNames)
+
+    def renameGlyphs(self, glyphMapping):
+        for subtable in self.subtables:
+            subtable.renameGlyphs(glyphMapping)
+
+    def cleanup(self):
+        pass
+
     # compression
 
     def _findPotentialClasses(self):
@@ -486,6 +576,8 @@ class Lookup(object):
             subtable._populateClasses(classes)
 
     def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
         if self.type != other.type:
             return False
         if self.flag != other.flag:
@@ -516,6 +608,8 @@ class LookupReference(object):
         writer.lookupReference(self.name)
 
     def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
         return self.name == other.name
 
     def __ne__(self, other):
@@ -552,6 +646,8 @@ class LookupFlag(object):
         self.markAttachmentType = bool(lookupFlag & 0xFF00)
 
     def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
         if self.rightToLeft != other.rightToLeft:
             return False
         if self.ignoreBaseGlyphs != other.ignoreBaseGlyphs:
@@ -827,6 +923,8 @@ class GSUBSubtable(object):
         return newSequence
 
     def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
         if self.backtrack != other.backtrack:
             return False
         if self.lookahead != other.lookahead:
@@ -850,14 +948,88 @@ class GSUBSubtable(object):
         )
         return hash(s)
 
+    # manipulation
 
-class Classes(dict): pass
+    def removeGlyphs(self, glyphNames):
+        self._removeGlyphsFromSequence(self.backtrack, glyphNames)
+        self._removeGlyphsFromSequence(self.lookahead, glyphNames)
+        for sequence in self.target:
+            self._removeGlyphsFromSequence(sequence, glyphNames)
+        for sequence in self.substitution:
+            self._removeGlyphsFromSequence(sequence, glyphNames)
+
+    def _removeGlyphsFromSequence(self, sequence, glyphNames):
+        for member in sequence:
+            member.removeGlyphs(glyphNames)
+
+    def renameGlyphs(self, glyphMapping):
+        self._renameGlyphsInSequence(self.backtrack, glyphMapping)
+        self._renameGlyphsInSequence(self.lookahead, glyphMapping)
+        for sequence in self.target:
+            self._renameGlyphsInSequence(sequence, glyphMapping)
+        for sequence in self.substitution:
+            self._renameGlyphsInSequence(sequence, glyphMapping)
+
+    def _renameGlyphsInSequence(self, sequence, glyphMapping):
+        for member in sequence:
+            member.renameGlyphs(glyphMapping)
+
+    def cleanup(self):
+        pass
 
 
-class Sequence(list): pass
+class Classes(dict):
+
+    def removeGlyphs(self, glyphNames):
+        for group in self.values():
+            group.removeGlyphs(glyphNames)
+
+    def renameGlyphs(self, glyphMapping):
+        for group in self.values():
+            group.renameGlyphs(glyphMapping)
+
+    def cleanup(self):
+        for className, members in self.items():
+            if not members:
+                del self[className]
 
 
-class Class(list): pass
+class Sequence(list):
+
+    def removeGlyphs(self, glyphNames):
+        for group in self:
+            group.removeGlyphs(glyphNames)
+
+    def renameGlyphs(self, glyphMapping):
+        for group in self:
+            group.removeGlyphs(glyphMapping)
+
+    def cleanup(self):
+        new = []
+        for group in self:
+            group.cleanup()
+            if group:
+                new.append(group)
+        del self[:]
+        self.extend(new)
+
+
+class Class(list):
+
+    def removeGlyphs(self, glyphNames):
+        new = [member for member in self if member not in glyphNames]
+        if new != self:
+            del self[:]
+            self.extend(new)
+
+    def renameGlyphs(self, glyphMapping):
+        new = [glyphMapping.get(member, member) for member in self]
+        if new != self:
+            del self[:]
+            self.extend(new)
+
+    def cleanup(self):
+        pass
 
 
 class ClassReference(object):
@@ -866,6 +1038,8 @@ class ClassReference(object):
         self.name = None
 
     def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
         return self.name == other.name
 
     def __ne__(self, other):
@@ -874,12 +1048,6 @@ class ClassReference(object):
     def __hash__(self):
         s = "ClassReference | name=%s" % self.name
         return hash(s)
-
-
-class Alternates(list): pass
-
-
-class Ligature(list): pass
 
 
 # ---------
