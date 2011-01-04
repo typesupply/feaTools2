@@ -332,14 +332,14 @@ class FeaSyntaxWriter(AbstractWriter):
 
     # class definitiion
 
-    def addLanguage(self, name, members):
+    def addClassDefinition(self, name, members):
         # don't filter
         if not self._filter:
             self._addClassDefinition(name, members)
             return
         # filter
         d = dict(
-            identifier="addLanguage",
+            identifier="addClassDefinition",
             name=name,
             members=members
         )
