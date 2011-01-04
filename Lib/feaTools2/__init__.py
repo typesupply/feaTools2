@@ -3,8 +3,6 @@ To Do:
 - feature.tag vs. lookup.name
 - lookup type 7
 - move _load to a function and a writer
-- merge GSUB and GPOS into one table. GDEF as well, i guess.
-    - rename the Table class since it won't make sense anymore.
 - move type assertions from writer to attributes in the subtable objects
 - add decompress methods that undo what compression does.
   this would be useful for taking .fea or a subset object and going back to binary.
@@ -26,18 +24,12 @@ class FeaToolsError(Exception): pass
 
 def decompileBinaryToObject(pathOrFile):
     from fontTools.ttLib import TTFont
-    from objects import Table
+    from objects import Tables
     # load font
     font = TTFont(pathOrFile)
     # decompile
-    tags = "GSUB".split(" ")
-    tables = {}
-    for tag in tags:
-        table = Table()
-        table.tag = tag
-        if font.has_key(tag):
-            table._load(font[tag].table, tag)
-        tables[tag] = table
+    tables = Tables()
+    tables._load(font)
     # close
     font.close()
     # done
@@ -51,6 +43,7 @@ def decompileBinaryToFeaSyntax(pathOrFile):
     # write
     writer = FeaSyntaxWriter(filterRedundancies=True)
     tables["GSUB"].write(writer)
+    tables["GPOS"].write(writer)
     text = writer.write()
     # done
     return text

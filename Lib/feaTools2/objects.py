@@ -1,3 +1,23 @@
+class Tables(object):
+
+    def __init__(self):
+        self._gsub = Table()
+        self._gsub.tag = "GSUB"
+        self._gpos = Table()
+        self._gpos.tag = "GPOS"
+
+    def __getitem__(self, key):
+        if key == "GSUB":
+            return self._gsub
+        if key == "GPOS":
+            return self._gpos
+        raise KeyError, "Unknonw table %s." % key
+
+    def _load(self, font):
+        if font.has_key("GSUB"):
+            self._gsub._load(font["GSUB"].table, "GSUB")
+
+
 class Table(list):
 
     def __init__(self):

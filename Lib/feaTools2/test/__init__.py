@@ -30,7 +30,7 @@ def compileDecompileCompareDumps(features, expectedDump):
     errors = compiler.compile(font, path)["makeotf"]
     # extract the features
     try:
-        result = decompileBinaryToObject(path)
+        tables = decompileBinaryToObject(path)
     # print compiler errors
     except TTLibError:
         print errors
@@ -39,7 +39,7 @@ def compileDecompileCompareDumps(features, expectedDump):
         os.remove(path)
     # dump
     writer = DumpWriter()
-    result["GSUB"].write(writer)
+    tables["GSUB"].write(writer)
     dump = writer.dump()
     # compare
     compareDumps(expectedDump, dump)
