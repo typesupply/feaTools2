@@ -70,7 +70,41 @@ class Table(list):
             feature.renameGlyphs(glyphMapping)
 
     def cleanup(self):
-        pass
+        # remove empty classes
+        removedClasses = set()
+        for name, members in self.classes.items():
+            if not members:
+                removedClasses.add(name)
+                del self.classes[name]
+        # remove empty lookups
+        removedLookups = set()
+        newLookups = []
+        for lookup in self.lookups:
+            # remove the classes
+            lookup._removeClassReferences(removedClasses)
+            # clean up
+            lookup.cleanup()
+            # flag for removal
+            if lookup._shouldBeRemoved():
+                removedLookups.add(lookup.name)
+            else:
+                newLookups.append(lookup)
+        self.lookups = newLookups
+        # handle the features
+        toRemove = []
+        for index, feature in enumerate(self):
+            # remove the classes
+            feature._removeClassReferences(removedClasses)
+            # remove the lookups
+            feature._removeLookupReferences(removedLookups)
+            # clean up
+            feature.cleanup()
+            # flag for removal
+            if feature._shouldBeRemoved():
+                toRemove.append(index)
+        # remove
+        for index in reversed(toRemove):
+            del self[index]
 
     # writer API
 
@@ -250,7 +284,39 @@ class Feature(object):
             script.renameGlyphs(glyphMapping)
 
     def cleanup(self):
-        pass
+        # remove empty local classes
+        removedClasses = set()
+        for name, members in self.classes.items():
+            if not members:
+                removedClasses.add(name)
+                del self.classes[name]
+        # handle the script
+        toRemove = []
+        for index, script in enumerate(self.scripts):
+            # remove class references
+            script._removeClassReferences(removedClasses)
+            # clean up
+            script.cleanup()
+            # flag it for removal
+            if script._shouldBeRemoved():
+                toRemove.append(index)
+        # remove scripts
+        for index in reversed(toRemove):
+            del self.scripts[index]
+
+    def _removeClassReferences(self, removedClasses):
+        for script in self.scripts:
+            script._removeClassReferences(removedClasses)
+
+    def _removeLookupReferences(self, removedLookups):
+        for script in self.scripts:
+            script._removeLookupReferences(removedLookups)
+
+    def _shouldBeRemoved(self):
+        for script in self.scripts:
+            if not script._shouldBeRemoved():
+                return False
+        return True
 
     # compress lookups
 
@@ -398,7 +464,31 @@ class Script(object):
             language.renameGlyphs(glyphMapping)
 
     def cleanup(self):
-        pass
+        # handle the languages
+        toRemove = []
+        for index, language in enumerate(self.languages):
+            # clean up
+            language.cleanup()
+            # flag it for removal
+            if language._shouldBeRemoved():
+                toRemove.append(index)
+        # remove scripts
+        for index in reversed(toRemove):
+            del self.languages[index]
+
+    def _removeClassReferences(self, removedClasses):
+        for language in self.languages:
+            language._removeClassReferences(removedClasses)
+
+    def _removeLookupReferences(self, removedLookups):
+        for language in self.languages:
+            language._removeLookupReferences(removedLookups)
+
+    def _shouldBeRemoved(self):
+        for language in self.languages:
+            if not language._shouldBeRemoved():
+                return False
+        return True
 
     # compression
 
@@ -469,14 +559,52 @@ class Language(object):
 
     def removeGlyphs(self, glyphNames):
         for lookup in self.lookups:
+            if isinstance(lookup, LookupReference):
+                continue
             lookup.removeGlyphs(glyphNames)
 
     def renameGlyphs(self, glyphMapping):
         for lookup in self.lookups:
+            if isinstance(lookup, LookupReference):
+                continue
             lookup.renameGlyphs(glyphMapping)
 
     def cleanup(self):
-        pass
+        # handle the lookups
+        toRemove = []
+        for index, lookup in enumerate(self.lookups):
+            if isinstance(lookup, LookupReference):
+                continue
+            # clean up
+            lookup.cleanup()
+            # flag it for removal
+            if lookup._shouldBeRemoved():
+                toRemove.append(index)
+        # remove scripts
+        for index in reversed(toRemove):
+            del self.lookups[index]
+
+    def _removeClassReferences(self, removedClasses):
+        for lookup in self.lookups:
+            if isinstance(lookup, LookupReference):
+                continue
+            lookup._removeClassReferences(removedClasses)
+
+    def _removeLookupReferences(self, removedLookups):
+        toRemove = []
+        for index, lookup in enumerate(self.lookups):
+            if isinstance(lookup, LookupReference) and lookup.name in removedLookups:
+                toRemove.append(index)
+        for index in reversed(toRemove):
+            del self.lookups[index]
+
+    def _shouldBeRemoved(self):
+        for lookup in self.lookups:
+            if isinstance(lookup, LookupReference):
+                return False
+            if not lookup._shouldBeRemoved():
+                return False
+        return True
 
     # compress lookups
 
@@ -590,7 +718,27 @@ class Lookup(object):
             subtable.renameGlyphs(glyphMapping)
 
     def cleanup(self):
-        pass
+        # handle the subtables
+        toRemove = []
+        for index, subtable in enumerate(self.subtables):
+            # clean up
+            subtable.cleanup()
+            # flag it for removal
+            if subtable._shouldBeRemoved():
+                toRemove.append(index)
+        # remove scripts
+        for index in reversed(toRemove):
+            del self.subtables[index]
+
+    def _removeClassReferences(self, removedClasses):
+        for subtable in self.subtables:
+            subtable._removeClassReferences(removedClasses)
+
+    def _shouldBeRemoved(self):
+        for subtable in self.subtables:
+            if not subtable._shouldBeRemoved():
+                return False
+        return True
 
     # compression
 
@@ -848,7 +996,40 @@ class GSUBSubtable(object):
             member.renameGlyphs(glyphMapping)
 
     def cleanup(self):
-        pass
+        self.backtrack.cleanup()
+        self.lookahead.cleanup()
+        new = []
+        for sequence in self.target:
+            sequence.cleanup()
+            if sequence:
+                new.append(sequence)
+        self.target = new
+        new = []
+        for sequence in self.substitution:
+            sequence.cleanup()
+            if sequence:
+                new.append(sequence)
+        self.substitution = new
+
+    def _removeClassReferences(self, removedClasses):
+        self._removeClassReferencesInSequence(self.backtrack, removedClasses)
+        self._removeClassReferencesInSequence(self.lookahead, removedClasses)
+        for sequence in self.target:
+            self._removeClassReferencesInSequence(sequence, removedClasses)
+        for sequence in self.substitution:
+            self._removeClassReferencesInSequence(sequence, removedClasses)
+
+    def _removeClassReferencesInSequence(self, sequence, removedClasses):
+        for member in sequence:
+            member._removeClassReferences(removedClasses)
+
+    def _shouldBeRemoved(self):
+        if not self.target:
+            return True
+        if not self.substitution:
+            # XXX this is not right! ignore statements have empty substitutions!
+            return True
+        return False
 
 
 class Classes(dict):
@@ -860,11 +1041,6 @@ class Classes(dict):
     def renameGlyphs(self, glyphMapping):
         for group in self.values():
             group.renameGlyphs(glyphMapping)
-
-    def cleanup(self):
-        for className, members in self.items():
-            if not members:
-                del self[className]
 
 
 class Sequence(list):
@@ -880,11 +1056,14 @@ class Sequence(list):
     def cleanup(self):
         new = []
         for group in self:
-            group.cleanup()
             if group:
                 new.append(group)
         del self[:]
         self.extend(new)
+
+    def _removeClassReferences(self, removedClasses):
+        for group in self:
+            group._removeClassReferences(removedClasses)
 
 
 class Class(list):
@@ -901,8 +1080,15 @@ class Class(list):
             del self[:]
             self.extend(new)
 
-    def cleanup(self):
-        pass
+    def _removeClassReferences(self, removedClasses):
+        new = []
+        for member in self:
+            if isinstance(member, ClassReference) and member.name in removedClasses:
+                continue
+            new.append(member)
+        if new != self:
+            del self[:]
+            self.extend(new)
 
 
 class ClassReference(object):
