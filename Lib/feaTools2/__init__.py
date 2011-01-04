@@ -2,7 +2,6 @@
 To Do:
 - feature.tag vs. lookup.name
 - lookup type 7
-- move _load to a function and a writer
 - move type assertions from writer to attributes in the subtable objects
 - add decompress methods that undo what compression does.
   this would be useful for taking .fea or a subset object and going back to binary.
@@ -14,22 +13,38 @@ To Do:
     cleanup (removes unnecessary stuff)
 - make objects descend from defcon's base object
 - handle markAttachmentType properly
-- is the type attribute of the Lookup object necessary?
 - revisit __hash__
 - zfill class and lookup names?
+- should there be any checking for overwrites or bad data? should the objects be responsisble for this?
+    - duplicate feature tag
+    - existing class
+    - duplicate script tag
+    - duplicate language tag
+    - duplicate lookup name
+    - lookup reference to unknown lookup
+    - class reference to unknown class
+    - target/substitution/backtrack/lookup structure
+    - GSUB and GPOS subtables in the same lookup
+- get rid of the addLanguageSystem writer. it only means something in .fea
+  and it can be deduced through iteration.
 """
 
 class FeaToolsError(Exception): pass
 
 
-def decompileBinaryToObject(pathOrFile):
+def decompileBinaryToObject(pathOrFile, compress=True):
     from fontTools.ttLib import TTFont
-    from objects import Tables
+    from feaTools2.objects import Tables
+    from feaTools2.parsers.binaryParser import parseTable
     # load font
     font = TTFont(pathOrFile)
     # decompile
     tables = Tables()
-    tables._load(font)
+    if "GSUB" in font:
+        table = tables["GSUB"]
+        parseTable(table, font["GSUB"].table, "GSUB")
+        if compress:
+            table.compress()
     # close
     font.close()
     # done
@@ -37,7 +52,7 @@ def decompileBinaryToObject(pathOrFile):
 
 
 def decompileBinaryToFeaSyntax(pathOrFile):
-    from writers.feaSyntaxWriter import FeaSyntaxWriter
+    from feaTools2.writers.feaSyntaxWriter import FeaSyntaxWriter
     # decompile
     tables = decompileBinaryToObject(pathOrFile)
     # write

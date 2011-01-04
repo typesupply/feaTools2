@@ -1,3 +1,6 @@
+from feaTools2 import FeaToolsError
+
+
 class Tables(object):
 
     def __init__(self):
@@ -12,10 +15,6 @@ class Tables(object):
         if key == "GPOS":
             return self._gpos
         raise KeyError, "Unknonw table %s." % key
-
-    def _load(self, font):
-        if font.has_key("GSUB"):
-            self._gsub._load(font["GSUB"].table, "GSUB")
 
 
 class Table(list):
@@ -73,68 +72,30 @@ class Table(list):
     def cleanup(self):
         pass
 
-    # loading
+    # writer API
 
-    def _load(self, table, tableTag):
-        # first pass through the features
-        features = {}
-        for scriptRecord in table.ScriptList.ScriptRecord:
-            scriptTag = scriptRecord.ScriptTag
-            if scriptTag == "DFLT":
-                scriptTag = None
-            # default
-            languageTag = None
-            featureIndexes = scriptRecord.Script.DefaultLangSys.FeatureIndex
-            for index in featureIndexes:
-                featureRecord = table.FeatureList.FeatureRecord[index]
-                featureTag = featureRecord.FeatureTag
-                lookupIndexes = featureRecord.Feature.LookupListIndex
-                if featureTag not in features:
-                    features[featureTag] = []
-                features[featureTag].append((scriptTag, languageTag, lookupIndexes))
-            # language specific
-            for languageRecord in scriptRecord.Script.LangSysRecord:
-                languageTag = languageRecord.LangSysTag
-                featureIndexes = languageRecord.LangSys.FeatureIndex
-                for index in featureIndexes:
-                    featureRecord = table.FeatureList.FeatureRecord[index]
-                    featureTag = featureRecord.FeatureTag
-                    lookupIndexes = featureRecord.Feature.LookupListIndex
-                    if featureTag not in features:
-                        features[featureTag] = []
-                    features[featureTag].append((scriptTag, languageTag, lookupIndexes))
-        # order the features
-        sorter = []
-        for featureTag, records in features.items():
-            indexes = []
-            for (scriptTag, languageTag, lookupIndexes) in records:
-                indexes += lookupIndexes
-            indexes = tuple(sorted(set(indexes)))
-            sorter.append((indexes, featureTag))
-        featureOrder = [featureTag for (indexes, featureTag) in sorted(sorter)]
-        # sort the script and language records
-        # grab the lookup records
-        for featureTag, records in features.items():
-            _records = []
-            for (scriptTag, languageTag, lookupIndexes) in sorted(records):
-                if scriptTag is None:
-                    scriptTag = "DFLT"
-                lookupRecords = [table.LookupList.Lookup[index] for index in lookupIndexes]
-                _records.append((scriptTag, languageTag, lookupRecords))
-            features[featureTag] = _records
-        # do the official packing
-        for featureTag in featureOrder:
-            records = features[featureTag]
-            feature = Feature()
-            feature.tag = featureTag
-            feature._load(table, tableTag, records)
-            self.append(feature)
-        # compress
-        self._compress()
+    def addLanguageSystem(self, script, language):
+        # this has no meaning here
+        pass
+
+    def addClassDefinition(self, name, members):
+        self.classes[name] = Class(members)
+
+    def addFeature(self, name):
+        feature = Feature()
+        feature.tag = name
+        self.append(feature)
+        return feature
+
+    def addLookup(self, name):
+        lookup = Lookup()
+        lookup.name = name
+        self.lookups.append(lookup)
+        return lookup
 
     # compression
 
-    def _compress(self):
+    def compress(self):
         self._compressLookups()
         self._compressClasses()
 
@@ -245,17 +206,36 @@ class Feature(object):
         for script in self.scripts:
             script.write(writer)
 
-    # loading
+    # writer API
 
-    def _load(self, table, tableTag, records):
-        for (scriptTag, languageTag, lookupRecords) in records:
-            if self.scripts and self.scripts[-1].tag == scriptTag:
-                script = self.scripts[-1]
-            else:
-                script = Script()
-                script.tag = scriptTag
-                self.scripts.append(script)
-            script._load(table, tableTag, languageTag, lookupRecords)
+    def addClassDefinition(self, name, members):
+        self.classes[name] = Class(members)
+
+    def addScript(self, name):
+        # prevent direct duplication
+        if not self.scripts or self.scripts[-1].tag != name:
+            script = Script()
+            script.tag = name
+            self.scripts.append(script)
+
+    def addLanguage(self, name, includeDefault=True):
+        if not self.scripts:
+            raise FeaToolsError, "A script must be defined before adding a language."
+        self.scripts[-1].addLanguage(name, includeDefault=includeDefault)
+
+    def addLookup(self, name):
+        if not self.scripts:
+            raise FeaToolsError, "A script must be defined before adding a lookup."
+        if not self.scripts[-1].languages:
+            raise FeaToolsError, "A language must be defined before adding a lookup."
+        return self.scripts[-1].languages[-1].addLookup(name)
+
+    def addLookupReference(self, name):
+        if not self.scripts:
+            raise FeaToolsError, "A script must be defined before adding a lookup reference."
+        if not self.scripts[-1].languages:
+            raise FeaToolsError, "A language must be defined before adding a lookup reference."
+        self.scripts[-1].languages[-1].addLookupReference(name)
 
     # manipulation
 
@@ -397,13 +377,15 @@ class Script(object):
         for language in self.languages:
             language.write(writer)
 
-    # loading
+    # writer API
 
-    def _load(self, table, tableTag, languageTag, lookupRecords):
-        language = Language()
-        language.tag = languageTag
-        language._load(table, tableTag, lookupRecords)
-        self.languages.append(language)
+    def addLanguage(self, name, includeDefault=True):
+        # prevent direct duplication
+        if not self.languages or self.languages[-1].tag != name:
+            language = Language()
+            language.tag = name
+            language.includeDefault = includeDefault
+            self.languages.append(language)
 
     # manipulation
 
@@ -470,13 +452,18 @@ class Language(object):
                 lookupWriter = writer.addLookup(lookup.name)
                 lookup.write(lookupWriter)
 
-    # loading
+    # writer API
 
-    def _load(self, table, tableTag, lookupRecords):
-        for lookupRecord in lookupRecords:
-            lookup = Lookup()
-            lookup._load(table, tableTag, lookupRecord)
-            self.lookups.append(lookup)
+    def addLookup(self, name):
+        lookup = Lookup()
+        lookup.name = name
+        self.lookups.append(lookup)
+        return lookup
+
+    def addLookupReference(self, name):
+        lookupReference = LookupReference()
+        lookupReference.name = name
+        self.lookups.append(lookupReference)
 
     # manipulation
 
@@ -541,7 +528,6 @@ class Lookup(object):
 
     def __init__(self):
         self.name = None
-        self.type = None
         self.flag = LookupFlag()
         self.subtables = []
 
@@ -554,19 +540,44 @@ class Lookup(object):
         for subtable in self.subtables:
             subtable.write(writer)
 
-    # loading
+    # writer API
 
-    def _load(self, table, tableTag, lookupRecord):
-        self.type = lookupRecord.LookupType
-        self.flag._load(lookupRecord.LookupFlag)
-        if tableTag == "GSUB":
-            subtableClass = GSUBSubtable
-        else:
-            raise NotImplementedError
-        for subtableRecord in lookupRecord.SubTable:
-            subtable = subtableClass()
-            subtable._load(table, tableTag, self.type, subtableRecord)
-            self.subtables.append(subtable)
+    def addLookupFlag(self, rightToLeft=False, ignoreBaseGlyphs=False, ignoreLigatures=False, ignoreMarks=False, markAttachmentType=None):
+        lookupFlag = LookupFlag()
+        lookupFlag.rightToLeft = rightToLeft
+        lookupFlag.ignoreBaseGlyphs = ignoreBaseGlyphs
+        lookupFlag.ignoreLigatures = ignoreLigatures
+        lookupFlag.ignoreMarks = ignoreMarks
+        lookupFlag.markAttachmentType = markAttachmentType
+        self.flag = lookupFlag
+
+    def _convertSequence(self, sequence):
+        newSequence = Sequence()
+        for group in sequence:
+            newGroup = Class()
+            for member in group:
+                if member.startswith("@"):
+                    m = ClassReference()
+                    m.name = member
+                    member = m
+                newGroup.append(member)
+            newSequence.append(newGroup)
+        return newSequence
+
+    def addGSUBSubtable(self, target, substitution, type, backtrack=[], lookahead=[]):
+        subtable = GSUBSubtable()
+        subtable.type = type
+        subtable.target = [self._convertSequence(i) for i in target]
+        subtable.substitution = [self._convertSequence(i) for i in substitution]
+        subtable.backtrack = self._convertSequence(backtrack)
+        subtable.lookahead = self._convertSequence(lookahead)
+        self.subtables.append(subtable)
+
+    def addGPOSSubtable(self, target, positioning, backtrack=[], lookahead=[], type=None):
+        raise NotImplementedError
+
+    def addFeatureReference(self, name):
+        raise NotImplementedError
 
     # manipulation
 
@@ -598,8 +609,6 @@ class Lookup(object):
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             return False
-        if self.type != other.type:
-            return False
         if self.flag != other.flag:
             return False
         if self.subtables != other.subtables:
@@ -610,9 +619,8 @@ class Lookup(object):
         return not self == other
 
     def __hash__(self):
-        s = "Lookup | name=%s type=%d flag=%s subtables=%s" % (
+        s = "Lookup | name=%s flag=%s subtables=%s" % (
             self.name,
-            self.type,
             str(hash(self.flag)),
             " ".join([str(hash(i)) for i in self.subtables])
         )
@@ -657,13 +665,6 @@ class LookupFlag(object):
             ignoreMarks=self.ignoreMarks,
             markAttachmentType=self.markAttachmentType
         )
-
-    def _load(self, lookupFlag):
-        self.rightToLeft = bool(lookupFlag & 0x0001)
-        self.ignoreBaseGlyphs = bool(lookupFlag & 0x0002)
-        self.ignoreLigatures = bool(lookupFlag & 0x0004)
-        self.ignoreMarks = bool(lookupFlag & 0x0008)
-        self.markAttachmentType = bool(lookupFlag & 0xFF00)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -737,25 +738,6 @@ class GSUBSubtable(object):
 
     substitution = property(_get_substitution, _set_substitution)
 
-    # type routing
-
-    def _load(self, table, tableTag, type, subtable):
-        self.type = type
-        if type == 1:
-            self._loadType1(subtable)
-        elif type == 2:
-            self._loadType2(subtable)
-        elif type == 3:
-            self._loadType3(subtable)
-        elif type == 4:
-            self._loadType4(subtable)
-        elif type == 5:
-            self._loadType5(subtable)
-        elif type == 6:
-            self._loadType6(table, tableTag, subtable)
-        elif type == 7:
-            self._loadType7(subtable)
-
     # write
 
     def write(self, writer):
@@ -775,135 +757,6 @@ class GSUBSubtable(object):
                 newGroup.append(member)
             newSequence.append(newGroup)
         return newSequence
-
-    # type 1
-
-    def _loadType1(self, subtable):
-        targetClass = Class()
-        substitutionClass = Class()
-        for t, s in sorted(subtable.mapping.items()):
-            targetClass.append(t)
-            substitutionClass.append(s)
-        target = [Sequence([targetClass])]
-        substitution = [Sequence([substitutionClass])]
-        self.target = target
-        self.substitution = substitution
-
-    # type 2
-
-    # type 3
-
-    def _loadType3(self, subtable):
-        target = []
-        substitution = []
-        for t, s in sorted(subtable.alternates.items()):
-            # wrap it in a class
-            t = Class([t])
-            # wrap the class in a sequence
-            t = Sequence([t])
-            # store
-            target.append(t)
-            # wrap it in a class
-            s = Class(s)
-            # wrap the class in a sequence
-            s = Sequence([s])
-            # store
-            substitution.append(s)
-        self.target = target
-        self.substitution = substitution
-
-    # type 4
-
-    def _loadType4(self, subtable):
-        target = []
-        substitution = []
-        for firstGlyph, parts in sorted(subtable.ligatures.items()):
-            for part in parts:
-                # get the parts
-                t = [firstGlyph] + part.Component
-                # wrap the parts in classes
-                t = [Class([i]) for i in t]
-                # wrap the parts in a sequence
-                t = Sequence(t)
-                # store
-                target.append(t)
-                # get the substitution
-                s = part.LigGlyph
-                # wrap it in a class
-                s = Class([s])
-                # wrap the class in a sequence
-                s = Sequence([s])
-                # store
-                substitution.append(s)
-        self.target = target
-        self.substitution = substitution
-
-    # type 5
-
-    # type 6
-
-    def _loadType6(self, table, tableTag, subtable):
-        assert subtable.Format == 3, "Stop being lazy."
-        backtrack = [readCoverage(i) for i in reversed(subtable.BacktrackCoverage)]
-        lookahead = [readCoverage(i) for i in subtable.LookAheadCoverage]
-        input = [readCoverage(i) for i in subtable.InputCoverage]
-        # the "ignore" rule generates subtables with an empty SubstLookup
-        if not subtable.SubstLookupRecord:
-            target = [Sequence(input)]
-            substitution = []
-        # a regular contextual rule
-        else:
-            target = []
-            substitution = []
-            assert len(subtable.SubstLookupRecord) == 1, "Does this ever happen?"
-            for substLookup in subtable.SubstLookupRecord:
-                index = substLookup.LookupListIndex
-                lookupRecord = table.LookupList.Lookup[index]
-                lookup = Lookup()
-                lookup._load(table, tableTag, lookupRecord)
-                # XXX potential problem here:
-                # theoretically this nested lookup could have a flag that is
-                # different than the flag of the lookup that contains this
-                # subtable. i can't think of a way to do this with the
-                # .fea syntax, so i'm not worrying about it right now.
-                assert len(lookup.subtables) == 1, "Does this ever happen?"
-                for sequenceIndex, targetSequence in enumerate(lookup.subtables[0].target):
-                    substitutionSequence = lookup.subtables[0].substitution[sequenceIndex]
-                    if lookup.type == 1:
-                        assert len(input) == 1, "Does this ever happen?"
-                        newTargetSequence = Sequence()
-                        newSubstitutionSequence = Sequence()
-                        for classIndex, targetClass in enumerate(targetSequence):
-                            newTargetClass = Class()
-                            newSubstitutionClass = Class()
-                            for memberIndex, t in enumerate(targetClass):
-                                if t in input[0]:
-                                    newTargetClass.append(t)
-                                    s = substitutionSequence[classIndex][memberIndex]
-                                    newSubstitutionClass.append(s)
-                            if newTargetClass:
-                                newTargetSequence.append(newTargetClass)
-                                newSubstitutionSequence.append(newSubstitutionClass)
-                    elif lookup.type == 4:
-                        if targetSequence != input:
-                            print
-                            print "GSUB question"
-                            print targetSequence
-                            print input
-                            print
-                        else:
-                            newTargetSequence = targetSequence
-                            newSubstitutionSequence = substitutionSequence
-                    else:
-                        raise NotImplementedError
-                    target.append(newTargetSequence)
-                    substitution.append(newSubstitutionSequence)
-        self.backtrack = backtrack
-        self.lookahead = lookahead
-        self.target = target
-        self.substitution = substitution
-
-    # type 7
 
     # compression
 
@@ -1073,12 +926,6 @@ class ClassReference(object):
 # ---------
 # Utilities
 # ---------
-
-def readCoverage(coverage):
-    if not isinstance(coverage, list):
-        coverage = coverage.glyphs
-    coverage = Class(coverage)
-    return coverage
 
 def nameClass(features, members):
     name = "@" + "_".join(features)
