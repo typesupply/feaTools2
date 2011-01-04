@@ -2,60 +2,60 @@ class AbstractWriter(object):
 
     # file reference
 
-    def fileReference(self, path):
+    def addFileReference(self, path):
         raise NotImplementedError
 
     # language system
 
-    def languageSystem(self, script, language):
+    def addLanguageSystem(self, script, language):
         raise NotImplementedError
 
     # script
 
-    def script(self, name):
+    def addScript(self, name):
         raise NotImplementedError
 
     # language
 
-    def language(self, name, includeDefault=True):
+    def addLanguage(self, name, includeDefault=True):
         raise NotImplementedError
 
     # class definitiion
 
-    def classDefinition(self, name, members):
+    def addClassDefinition(self, name, members):
         raise NotImplementedError
 
     # feature
 
-    def newFeature(self, name):
+    def addFeature(self, name):
         raise NotImplementedError
 
     # lookup
 
-    def newLookup(self, name):
+    def addLookup(self, name):
         raise NotImplementedError
 
     # lookup flag
 
-    def lookupFlag(self, rightToLeft=False, ignoreBaseGlyphs=False, ignoreLigatures=False, ignoreMarks=False, markAttachmentType=None):
+    def addLookupFlag(self, rightToLeft=False, ignoreBaseGlyphs=False, ignoreLigatures=False, ignoreMarks=False, markAttachmentType=None):
         raise NotImplementedError
 
     # feature reference
 
-    def featureReference(self, name):
+    def addFeatureReference(self, name):
         raise NotImplementedError
 
     # lookup reference
 
-    def lookupReference(self, name):
+    def addLookupReference(self, name):
         raise NotImplementedError
 
     # GSUB
 
-    def gsubSubtable(self, target, substitution, type, backtrack=[], lookahead=[]):
+    def addGSUBSubtable(self, target, substitution, type, backtrack=[], lookahead=[]):
         raise NotImplementedError
 
     # GPOS
 
-    def gposSubtable(self, target, positioning, backtrack=[], lookahead=[], type=None):
+    def addGPOSSubtable(self, target, positioning, backtrack=[], lookahead=[], type=None):
         raise NotImplementedError

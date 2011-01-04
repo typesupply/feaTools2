@@ -40,18 +40,18 @@ class DumpWriter(object):
 
     # file reference
 
-    def fileReference(self, path):
+    def addFileReference(self, path):
         # this shouldn't happen in the objects
         raise NotImplementedError
 
     # language system
 
-    def languageSystem(self, script, language):
+    def addLanguageSystem(self, script, language):
         self._addLine("LanguageSystem: %s %s" % (script, language))
 
     # script
 
-    def script(self, name):
+    def addScript(self, name):
         self._inScript = False
         self._inLanguage = False
         self._addLine("Script: %s" % name)
@@ -59,7 +59,7 @@ class DumpWriter(object):
 
     # language
 
-    def language(self, name, includeDefault=True):
+    def addLanguage(self, name, includeDefault=True):
         self._inLanguage = False
         self._addLine("Language: %s" % name)
         self._inLanguage = True
@@ -67,12 +67,12 @@ class DumpWriter(object):
 
     # class definitiion
 
-    def classDefinition(self, name, members):
+    def addClassDefinition(self, name, members):
         self._addLine("Class: %s: [%s]" % (name, " ".join(members)))
 
     # feature
 
-    def newFeature(self, name):
+    def addFeature(self, name):
         self._addLine("Feature: %s" % name)
         # make the new writer
         writer = self.__class__()
@@ -82,7 +82,7 @@ class DumpWriter(object):
 
     # lookup
 
-    def newLookup(self, name):
+    def addLookup(self, name):
         self._addLine("Lookup: %s" % name)
         # make the new writer
         writer = self.__class__()
@@ -92,7 +92,7 @@ class DumpWriter(object):
 
     # lookup flag
 
-    def lookupFlag(self, rightToLeft=False, ignoreBaseGlyphs=False, ignoreLigatures=False, ignoreMarks=False, markAttachmentType=None):
+    def addLookupFlag(self, rightToLeft=False, ignoreBaseGlyphs=False, ignoreLigatures=False, ignoreMarks=False, markAttachmentType=None):
         self._addLine("LookupFlag:")
         self._indent += 1
         text = [
@@ -108,17 +108,17 @@ class DumpWriter(object):
 
     # feature reference
 
-    def featureReference(self, name):
+    def addFeatureReference(self, name):
         self._addLine("Feature Reference: %s" % name)
 
     # lookup reference
 
-    def lookupReference(self, name):
+    def addLookupReference(self, name):
         self._addLine("Lookup Reference: %s" % name)
 
     # GSUB
 
-    def gsubSubtable(self, target, substitution, type, backtrack=[], lookahead=[]):
+    def addGSUBSubtable(self, target, substitution, type, backtrack=[], lookahead=[]):
         self._addLine("GSUBSubtable Type %d:" % type)
         self._indent += 1
         text = [
@@ -134,5 +134,5 @@ class DumpWriter(object):
 
     # GPOS
 
-    def gposSubtable(self, target, positioning, backtrack=[], lookahead=[], type=None):
+    def addGPOSSubtable(self, target, positioning, backtrack=[], lookahead=[], type=None):
         pass

@@ -1,5 +1,6 @@
 """
 To Do:
+- feature.tag vs. lookup.name
 - lookup type 7
 - move _load to a function and a writer
 - merge GSUB and GPOS into one table. GDEF as well, i guess.
@@ -17,7 +18,11 @@ To Do:
 - handle markAttachmentType properly
 - is the type attribute of the Lookup object necessary?
 - revisit __hash__
+- zfill class and lookup names?
 """
+
+class FeaToolsError(Exception): pass
+
 
 def decompileBinaryToObject(pathOrFile):
     from fontTools.ttLib import TTFont
@@ -37,6 +42,7 @@ def decompileBinaryToObject(pathOrFile):
     font.close()
     # done
     return tables
+
 
 def decompileBinaryToFeaSyntax(pathOrFile):
     from writers.feaSyntaxWriter import FeaSyntaxWriter

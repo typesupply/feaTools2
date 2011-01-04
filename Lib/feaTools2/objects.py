@@ -21,17 +21,17 @@ class Table(list):
         for scriptTag, languageTag in sorted(languageSystems):
             if scriptTag is None:
                 scriptTag = "DFLT"
-            writer.languageSystem(scriptTag, languageTag)
+            writer.addLanguageSystem(scriptTag, languageTag)
         # classes
         for name, members in sorted(self.classes.items()):
-            writer.classDefinition(name, members)
+            writer.addClassDefinition(name, members)
         # lookups
         for lookup in self.lookups:
-            lookupWriter = writer.newLookup(lookup.name)
+            lookupWriter = writer.addLookup(lookup.name)
             lookup.write(lookupWriter)
         # features
         for feature in self:
-            featureWriter = writer.newFeature(feature.tag)
+            featureWriter = writer.addFeature(feature.tag)
             feature.write(featureWriter)
 
     # manipulation
@@ -220,7 +220,7 @@ class Feature(object):
     def write(self, writer):
         # classes
         for name, members in sorted(self.classes.items()):
-            writer.classDefinition(name, members)
+            writer.addClassDefinition(name, members)
         # scripts
         for script in self.scripts:
             script.write(writer)
@@ -372,7 +372,7 @@ class Script(object):
     # writing
 
     def write(self, writer):
-        writer.script(self.tag)
+        writer.addScript(self.tag)
         # languages
         for language in self.languages:
             language.write(writer)
@@ -441,13 +441,13 @@ class Language(object):
     # writing
 
     def write(self, writer):
-        writer.language(self.tag, includeDefault=self.includeDefault)
+        writer.addLanguage(self.tag, includeDefault=self.includeDefault)
         # lookups
         for lookup in self.lookups:
             if isinstance(lookup, LookupReference):
-                writer.lookupReference(lookup.name)
+                writer.addLookupReference(lookup.name)
             else:
-                lookupWriter = writer.newLookup(lookup.name)
+                lookupWriter = writer.addLookup(lookup.name)
                 lookup.write(lookupWriter)
 
     # loading
@@ -605,7 +605,7 @@ class LookupReference(object):
         self.name = None
 
     def write(self, writer):
-        writer.lookupReference(self.name)
+        writer.addLookupReference(self.name)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -630,7 +630,7 @@ class LookupFlag(object):
         self.markAttachmentType = False
 
     def write(self, writer):
-        writer.lookupFlag(
+        writer.addLookupFlag(
             rightToLeft=self.rightToLeft,
             ignoreBaseGlyphs=self.ignoreBaseGlyphs,
             ignoreLigatures=self.ignoreLigatures,
@@ -743,7 +743,7 @@ class GSUBSubtable(object):
         substitution = [self._flattenClassReferences(i) for i in self.substitution]
         backtrack = self._flattenClassReferences(self.backtrack)
         lookahead = self._flattenClassReferences(self.lookahead)
-        writer.gsubSubtable(target, substitution, self.type, backtrack=backtrack, lookahead=lookahead)
+        writer.addGSUBSubtable(target, substitution, self.type, backtrack=backtrack, lookahead=lookahead)
 
     def _flattenClassReferences(self, sequence):
         newSequence = []

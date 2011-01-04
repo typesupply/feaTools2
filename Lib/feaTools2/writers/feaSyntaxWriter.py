@@ -10,8 +10,8 @@ defaultLookupFlag = dict(
 )
 
 
-needSpaceBefore = "feature lookup script language lookupReference".split(" ")
-needSpaceAfter = "feature lookup script language lookupReference".split(" ")
+needSpaceBefore = "addFeature addLookup addScript addLanguage setLookupReference".split(" ")
+needSpaceAfter = "addFeature addLookup addScript addLanguage setLookupReference".split(" ")
 
 
 class FeaSyntaxWriter(AbstractWriter):
@@ -57,7 +57,7 @@ class FeaSyntaxWriter(AbstractWriter):
         for item in self._content:
             kwargs = dict(item)
             identifier = kwargs.pop("identifier")
-            if identifier in ("newFeature", "newLookup"):
+            if identifier in ("addFeature", "addLookup"):
                 writer = kwargs["writer"]
                 writer._indent = self._indentLevel() + 1
                 writer._preWrite()
@@ -113,13 +113,13 @@ class FeaSyntaxWriter(AbstractWriter):
             item = self._content.pop(0)
             identifier = item["identifier"]
             # script
-            if identifier == "script":
+            if identifier == "addScript":
                 item = self._filterScript(item)
             # language
-            elif identifier == "language":
+            elif identifier == "addLanguage":
                 item = self._filterLanguage(item)
             # lookup flag
-            elif identifier == "lookupFlag":
+            elif identifier == "addLookupFlag":
                 item = self._filterLookupFlag(item)
             # store
             if item is not None:
@@ -137,12 +137,12 @@ class FeaSyntaxWriter(AbstractWriter):
                 for otherItem in self._newContent:
                     identifier = otherItem["identifier"]
                     # lookup
-                    if identifier.startswith("lookup"):
+                    if identifier.startswith("addLookup"):
                         needScript = True
                     # subtable
-                    elif identifier == "gsubSubtable":
+                    elif identifier == "addGSUBSubtable":
                         needScript = True
-                    elif identifier == "gposSubtable":
+                    elif identifier == "addGPOSSubtable":
                         needScript = True
                 break
             # don't write the script if no lookups or subtables are
@@ -152,15 +152,15 @@ class FeaSyntaxWriter(AbstractWriter):
                 for otherItem in self._content:
                     identifier = otherItem["identifier"]
                     # lookup or lookup reference
-                    if identifier.startswith("lookup"):
+                    if identifier.startswith("addLookup"):
                         needScript = True
                     # subtable
-                    elif identifier == "gsubSubtable":
+                    elif identifier == "addGSUBSubtable":
                         needScript = True
-                    elif identifier == "gposSubtable":
+                    elif identifier == "addGPOSSubtable":
                         needScript = True
                     # script
-                    elif identifier == "script":
+                    elif identifier == "addScript":
                         needScript = False
                         break
                 break
@@ -179,7 +179,7 @@ class FeaSyntaxWriter(AbstractWriter):
                     # script
                     # if a script occurs before any of the above,
                     # the language is not needed
-                    if identifier == "script":
+                    if identifier == "addScript":
                         needLanguage = False
                         break
                 break
@@ -190,15 +190,15 @@ class FeaSyntaxWriter(AbstractWriter):
                 for otherItem in self._content:
                     identifier = otherItem["identifier"]
                     # lookup or lookup reference
-                    if identifier.startswith("lookup"):
+                    if identifier.startswith("addLookup"):
                         needLanguage = True
                     # subtable
-                    elif identifier == "gsubSubtable":
+                    elif identifier == "addGSUBSubtable":
                         needLanguage = True
-                    elif identifier == "gposSubtable":
+                    elif identifier == "addGPOSSubtable":
                         needLanguage = True
                     # script
-                    elif identifier == "script":
+                    elif identifier == "addScript":
                         needLanguage = True
                 break
         if needLanguage:
@@ -218,62 +218,62 @@ class FeaSyntaxWriter(AbstractWriter):
 
     # file reference
 
-    def fileReference(self, path):
+    def addFileReference(self, path):
         # don't filter
         if not self._filter:
-            self._fileReference(path)
+            self._addFileReference(path)
             return
         # filter
         d = dict(
-            identifier="fileReference",
+            identifier="addFileReference",
             path=path
         )
         self._content.append(d)
 
-    def _fileReference(self, path):
-        self._handleBreakBefore("fileReference")
+    def _addFileReference(self, path):
+        self._handleBreakBefore("addFileReference")
         text = [
             "include(%s);" % path
         ]
         self._text += self._indentText(text)
-        self._identifierStack.append("fileReference")
+        self._identifierStack.append("addFileReference")
 
     # language system
 
-    def languageSystem(self, script, language):
+    def addLanguageSystem(self, script, language):
         # don't filter
         if not self._filter:
-            self._languageSystem(script, language)
+            self._addLanguageSystem(script, language)
             return
         # filter
         d = dict(
-            identifier="languageSystem",
+            identifier="addLanguageSystem",
             script=script,
             language=language
         )
         self._content.append(d)
 
-    def _languageSystem(self, script, language):
+    def _addLanguageSystem(self, script, language):
         if language is None:
             language = "dflt"
         language = language.strip()
-        self._handleBreakBefore("languageSystem")
+        self._handleBreakBefore("addLanguageSystem")
         text = [
             "languagesystem %s %s;" % (script, language)
         ]
         self._text += self._indentText(text)
-        self._identifierStack.append("languageSystem")
+        self._identifierStack.append("addLanguageSystem")
 
     # script
 
-    def script(self, name):
+    def addScript(self, name):
         # don't filter
         if not self._filter:
-            self._script(name)
+            self._addScript(name)
             return
         # filter
         d = dict(
-            identifier="script",
+            identifier="addScript",
             name=name
         )
         self._content.append(d)
@@ -281,12 +281,12 @@ class FeaSyntaxWriter(AbstractWriter):
         self._inScript = True
         self._inLanguage = False
 
-    def _script(self, name):
+    def _addScript(self, name):
         # shift the indents back
         self._inScript = False
         self._inLanguage = False
         # write
-        self._handleBreakBefore("script")
+        self._handleBreakBefore("addScript")
         text = [
             "script %s;" % name
         ]
@@ -294,18 +294,18 @@ class FeaSyntaxWriter(AbstractWriter):
         # shift the following lines
         self._inScript = True
         # done
-        self._identifierStack.append("script")
+        self._identifierStack.append("addScript")
 
     # language
 
-    def language(self, name, includeDefault=True):
+    def addLanguage(self, name, includeDefault=True):
         # don't filter
         if not self._filter:
-            self._language(name, includeDefault)
+            self._addLanguage(name, includeDefault)
             return
         # filter
         d = dict(
-            identifier="language",
+            identifier="addLanguage",
             name=name,
             includeDefault=includeDefault
         )
@@ -313,14 +313,14 @@ class FeaSyntaxWriter(AbstractWriter):
         # shift the indents
         self._inLanguage = True
 
-    def _language(self, name, includeDefault=True):
+    def _addLanguage(self, name, includeDefault=True):
         # shift the indent back
         self._inLanguage = False
         # write
         if name is None:
             name = "dflt"
         name = name.strip()
-        self._handleBreakBefore("language")
+        self._handleBreakBefore("addLanguage")
         text = [
             "language %s;" % name
         ]
@@ -328,51 +328,51 @@ class FeaSyntaxWriter(AbstractWriter):
         # shift the following lines
         self._inLanguage = True
         # done
-        self._identifierStack.append("language")
+        self._identifierStack.append("addLanguage")
 
     # class definitiion
 
-    def classDefinition(self, name, members):
+    def addLanguage((self, name, members):
         # don't filter
         if not self._filter:
-            self._classDefinition(name, members)
+            self._addClassDefinition(name, members)
             return
         # filter
         d = dict(
-            identifier="classDefinition",
+            identifier="addLanguage",
             name=name,
             members=members
         )
         self._content.append(d)
 
-    def _classDefinition(self, name, members):
-        self._handleBreakBefore("classDefinition")
+    def _addClassDefinition(self, name, members):
+        self._handleBreakBefore("addLanguage")
         text = [
             "%s = [%s];" % (name, self._flattenClass(members))
         ]
         self._text += self._indentText(text)
-        self._identifierStack.append("classDefinition")
+        self._identifierStack.append("addLanguage")
 
     # feature
 
-    def newFeature(self, name):
+    def addFeature(self, name):
         writer = self.__class__(whitespace=self._whitespace, filterRedundancies=self._filter)
         writer._indent = self._indent + 1
         # don't filter
         if not self._filter:
-            self._newFeature(name, writer)
+            self._addFeature(name, writer)
             return writer
         # filter
         d = dict(
-            identifier="newFeature",
+            identifier="addFeature",
             name=name,
             writer=writer
         )
         self._content.append(d)
         return writer
 
-    def _newFeature(self, name, writer):
-        self._handleBreakBefore("feature")
+    def _addFeature(self, name, writer):
+        self._handleBreakBefore("addFeature")
         # start
         s = "feature %s {" % name
         self._text += self._indentText([s])
@@ -381,29 +381,29 @@ class FeaSyntaxWriter(AbstractWriter):
         # close
         s = "} %s;" % name
         self._text += self._indentText([s])
-        self._identifierStack.append("feature")
+        self._identifierStack.append("addFeature")
 
     # lookup
 
-    def newLookup(self, name):
+    def addLookup(self, name):
         writer = self.__class__(whitespace=self._whitespace, filterRedundancies=self._filter)
         writer._indent = self._indentLevel()
         # don't filter
         if not self._filter:
-            self._newLookup(name, writer)
+            self._addLookup(name, writer)
             return writer
         # filter
         writer._initialLookupFlag = self._findCurrentLookupFlag(self._content)
         d = dict(
-            identifier="newLookup",
+            identifier="addLookup",
             name=name,
             writer=writer
         )
         self._content.append(d)
         return writer
 
-    def _newLookup(self, name, writer):
-        self._handleBreakBefore("lookup")
+    def _addLookup(self, name, writer):
+        self._handleBreakBefore("addLookup")
         # start
         s = "lookup %s {" % name
         self._text += self._indentText([s])
@@ -412,7 +412,7 @@ class FeaSyntaxWriter(AbstractWriter):
         # close
         s = "} %s;" % name
         self._text += self._indentText([s])
-        self._identifierStack.append("lookup")
+        self._identifierStack.append("addLookup")
         return writer
 
     # lookup flag
@@ -420,22 +420,22 @@ class FeaSyntaxWriter(AbstractWriter):
     def _findCurrentLookupFlag(self, content):
         for item in reversed(content):
             identifier = item["identifier"]
-            if identifier == "lookupFlag":
+            if identifier == "addLookupFlag":
                 d = dict(item)
                 del d["identifier"]
                 return d
-            elif identifier == "script":
+            elif identifier == "addScript":
                 return defaultLookupFlag
         return self._initialLookupFlag
 
-    def lookupFlag(self, rightToLeft=False, ignoreBaseGlyphs=False, ignoreLigatures=False, ignoreMarks=False, markAttachmentType=None):
+    def addLookupFlag(self, rightToLeft=False, ignoreBaseGlyphs=False, ignoreLigatures=False, ignoreMarks=False, markAttachmentType=None):
         # don't filter
         if not self._filter:
-            self._lookupFlag(rightToLeft, ignoreBaseGlyphs, ignoreLigatures, ignoreMarks, markAttachmentType)
+            self._addLookupFlag(rightToLeft, ignoreBaseGlyphs, ignoreLigatures, ignoreMarks, markAttachmentType)
             return
         # filter
         d = dict(
-            identifier="lookupFlag",
+            identifier="addLookupFlag",
             rightToLeft=rightToLeft,
             ignoreBaseGlyphs=ignoreBaseGlyphs,
             ignoreLigatures=ignoreLigatures,
@@ -444,8 +444,8 @@ class FeaSyntaxWriter(AbstractWriter):
         )
         self._content.append(d)
 
-    def _lookupFlag(self, rightToLeft=False, ignoreBaseGlyphs=False, ignoreLigatures=False, ignoreMarks=False, markAttachmentType=None):
-        self._handleBreakBefore("lookupFlag")
+    def _addLookupFlag(self, rightToLeft=False, ignoreBaseGlyphs=False, ignoreLigatures=False, ignoreMarks=False, markAttachmentType=None):
+        self._handleBreakBefore("addLookupFlag")
         values = []
         if rightToLeft:
             values.append("RightToLeft")
@@ -462,61 +462,61 @@ class FeaSyntaxWriter(AbstractWriter):
             "lookupflag %s;" % values
         ]
         self._text += self._indentText(text)
-        self._identifierStack.append("lookupFlag")
+        self._identifierStack.append("addLookupFlag")
 
     # feature reference
 
-    def featureReference(self, name):
+    def addFeatureReference(self, name):
         # don't filter
         if not self._filter:
-            self._featureReference(name)
+            self._addFeatureReference(name)
             return
         # filter
         d = dict(
-            identifier="featureReference",
+            identifier="addFeatureReference",
             name=name
         )
         self._content.append(d)
 
-    def _featureReference(self, name):
+    def _addFeatureReference(self, name):
         raise NotImplementedError
 
     # lookup reference
 
-    def lookupReference(self, name):
+    def addLookupReference(self, name):
         # don't filter
         if not self._filter:
-            self._lookupReference(name)
+            self._addLookupReference(name)
             return
         # filter
         d = dict(
-            identifier="lookupReference",
+            identifier="addLookupReference",
             name=name
         )
         self._content.append(d)
 
-    def _lookupReference(self, name):
-        self._handleBreakBefore("lookupReference")
+    def _addLookupReference(self, name):
+        self._handleBreakBefore("addLookupReference")
         text = [
             "lookup %s;" % name
         ]
         self._text += self._indentText(text)
-        self._identifierStack.append("lookupReference")
+        self._identifierStack.append("addLookupReference")
 
     # GSUB
 
-    def gsubSubtable(self, target, substitution, type, backtrack=[], lookahead=[]):
+    def addGSUBSubtable(self, target, substitution, type, backtrack=[], lookahead=[]):
         assert isinstance(target, list)
         assert isinstance(substitution, list)
         assert isinstance(backtrack, list)
         assert isinstance(lookahead, list)
         # don't filter
         if not self._filter:
-            self._gsubSubtable(target, substitution, type, backtrack, lookahead)
+            self._addGSUBSubtable(target, substitution, type, backtrack, lookahead)
             return
         # filter
         d = dict(
-            identifier="gsubSubtable",
+            identifier="addGSUBSubtable",
             type=type,
             target=target,
             substitution=substitution,
@@ -525,8 +525,8 @@ class FeaSyntaxWriter(AbstractWriter):
         )
         self._content.append(d)
 
-    def _gsubSubtable(self, target, substitution, type, backtrack=[], lookahead=[]):
-        self._handleBreakBefore("gsubSubtable")
+    def _addGSUBSubtable(self, target, substitution, type, backtrack=[], lookahead=[]):
+        self._handleBreakBefore("addGSUBSubtable")
         item = dict(
             target=target,
             substitution=substitution,
@@ -537,7 +537,7 @@ class FeaSyntaxWriter(AbstractWriter):
         method = getattr(self, "_writeGSUBSubtableType%d" % type)
         text = method(item)
         self._text += self._indentText(text)
-        self._identifierStack.append("gsubSubtable")
+        self._identifierStack.append("addGSUBSubtable")
 
     def _writeGSUBSubtableGeneric(self, item):
         text = []
@@ -599,5 +599,5 @@ class FeaSyntaxWriter(AbstractWriter):
 
     # GPOS
 
-    def gposSubtable(self, target, positioning, backtrack=[], lookahead=[], type=None):
+    def addGPOSSubtable(self, target, positioning, backtrack=[], lookahead=[], type=None):
         raise NotImplementedError
