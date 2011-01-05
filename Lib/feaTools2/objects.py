@@ -935,10 +935,10 @@ class GSUBSubtable(object):
     def _populateClassesInSequence(self, sequence, classes):
         newSequence = Sequence()
         for member in sequence:
-            member = tuple(member)
-            if member in classes:
+            m = tuple(member)
+            if m in classes:
                 classReference = ClassReference()
-                classReference.name = classes[member]
+                classReference.name = classes[m]
                 member = Class([classReference])
             newSequence.append(member)
         return newSequence
