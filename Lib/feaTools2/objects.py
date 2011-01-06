@@ -847,10 +847,11 @@ class GSUBSubtable(object):
 
     def __init__(self):
         self.type = None
-        self._backtrack = []
-        self._lookahead = []
-        self._target = []
-        self._substitution = []
+        self._backtrack = Sequence()
+        self._lookahead = Sequence()
+        self._target = Sequence()
+        self._substitution = Sequence()
+        self._manipulationResultedInEmptySubstitution = False
 
     # attribute setting
 
@@ -882,6 +883,9 @@ class GSUBSubtable(object):
         return self._substitution
 
     def _set_substitution(self, value):
+        # any setting of the value causes the flag
+        # as a result of a manipulation to go away
+        self._manipulationResultedInEmptySubstitution = False
         self._substitution = value
 
     substitution = property(_get_substitution, _set_substitution)
@@ -976,8 +980,11 @@ class GSUBSubtable(object):
         self._removeGlyphsFromSequence(self.lookahead, glyphNames)
         for sequence in self.target:
             self._removeGlyphsFromSequence(sequence, glyphNames)
+        hadSubstitution = bool(self.substitution)
         for sequence in self.substitution:
             self._removeGlyphsFromSequence(sequence, glyphNames)
+        if not self.substitution and hadSubstitution:
+            self._manipulationResultedInEmptySubstitution = True
 
     def _removeGlyphsFromSequence(self, sequence, glyphNames):
         for member in sequence:
@@ -1016,8 +1023,11 @@ class GSUBSubtable(object):
         self._removeClassReferencesInSequence(self.lookahead, removedClasses)
         for sequence in self.target:
             self._removeClassReferencesInSequence(sequence, removedClasses)
+        hadSubstitution = bool(self.substitution)
         for sequence in self.substitution:
             self._removeClassReferencesInSequence(sequence, removedClasses)
+        if not self.substitution and hadSubstitution:
+            self._manipulationResultedInEmptySubstitution = True
 
     def _removeClassReferencesInSequence(self, sequence, removedClasses):
         for member in sequence:
@@ -1026,8 +1036,7 @@ class GSUBSubtable(object):
     def _shouldBeRemoved(self):
         if not self.target:
             return True
-        if not self.substitution:
-            # XXX this is not right! ignore statements have empty substitutions!
+        if not self.substitution and self._manipulationResultedInEmptySubstitution:
             return True
         return False
 

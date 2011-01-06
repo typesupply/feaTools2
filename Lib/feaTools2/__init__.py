@@ -7,10 +7,6 @@ To Do:
   this would be useful for taking .fea or a subset object and going back to binary.
 - make a fontTools object writer
 - make a compositor object writer
-- add some scripting functions
-    remove glyph(s)
-    rename glyph(s)
-    cleanup (removes unnecessary stuff)
 - make objects descend from defcon's base object
 - handle markAttachmentType properly
 - revisit __hash__
@@ -27,6 +23,8 @@ To Do:
     - GSUB and GPOS subtables in the same lookup
 - get rid of the addLanguageSystem writer. it only means something in .fea
   and it can be deduced through iteration.
+- the ignore support in the remove glyph/should be removed process in the
+  GSUB subtable object may be fragile. maybe set a special substitution Ignore value? 
 """
 
 class FeaToolsError(Exception): pass
