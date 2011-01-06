@@ -50,7 +50,7 @@ class FeaSyntaxWriter(AbstractWriter):
     def _preWrite(self):
         # filter
         self._filterContent()
-        # reset he indents
+        # reset the indents
         self._inScript = False
         self._inLanguage = False
         # write
@@ -58,8 +58,25 @@ class FeaSyntaxWriter(AbstractWriter):
             kwargs = dict(item)
             identifier = kwargs.pop("identifier")
             if identifier in ("addFeature", "addLookup"):
+                # set the indent level based on the current scope
                 writer = kwargs["writer"]
-                writer._indent = self._indentLevel() + 1
+                if identifier == "addFeature":
+                    writer._indent = self._indentLevel() + 1
+                elif identifier == "addLookup":
+                    if item["writeLookupTag"]:
+                        writer._indent = self._indentLevel() + 1
+                    else:
+                        writer._indent = self._indentLevel()
+                # if adding a feature, skim through the contents to see
+                # if an initial lookup container is needed
+                if identifier == "addFeature":
+                    subLookups = []
+                    for otherItem in writer._content:
+                        if otherItem["identifier"] == "addLookup":
+                            subLookups.append(otherItem)
+                    if len(subLookups) == 1:
+                        otherItem = subLookups[-1]
+                        otherItem["writeLookupTag"] = False
                 writer._preWrite()
             methodName = "_" + identifier
             method = getattr(self, methodName)
@@ -71,6 +88,9 @@ class FeaSyntaxWriter(AbstractWriter):
         # always need break
         if identifier in needSpaceBefore:
             self._text.append("")
+            # need two empty lines
+            if self._indent == 0 and identifier in ("addFeature", "addLookup"):
+                self._text.append("")
         # sequence break
         elif self._identifierStack and identifier != self._identifierStack[-1]:
             self._text.append("")
@@ -97,7 +117,9 @@ class FeaSyntaxWriter(AbstractWriter):
     # flattening
 
     def _flattenClass(self, members):
-        return " ".join(members)
+        if len(members) == 1:
+            return members[0]
+        return "[%s]" % " ".join(members)
 
     def _flattenSequence(self, members):
         members = [self._flattenClass(i) for i in members]
@@ -346,12 +368,12 @@ class FeaSyntaxWriter(AbstractWriter):
         self._content.append(d)
 
     def _addClassDefinition(self, name, members):
-        self._handleBreakBefore("addLanguage")
+        self._handleBreakBefore("addClassDefinition")
         text = [
-            "%s = [%s];" % (name, self._flattenClass(members))
+            "%s = %s;" % (name, self._flattenClass(members))
         ]
         self._text += self._indentText(text)
-        self._identifierStack.append("addLanguage")
+        self._identifierStack.append("addClassDefinition")
 
     # feature
 
@@ -390,29 +412,32 @@ class FeaSyntaxWriter(AbstractWriter):
         writer._indent = self._indentLevel()
         # don't filter
         if not self._filter:
-            self._addLookup(name, writer)
+            self._addLookup(name, writer, True)
             return writer
         # filter
         writer._initialLookupFlag = self._findCurrentLookupFlag(self._content)
         d = dict(
             identifier="addLookup",
             name=name,
-            writer=writer
+            writer=writer,
+            writeLookupTag=True
         )
         self._content.append(d)
         return writer
 
-    def _addLookup(self, name, writer):
-        self._handleBreakBefore("addLookup")
-        # start
-        s = "lookup %s {" % name
-        self._text += self._indentText([s])
+    def _addLookup(self, name, writer, writeLookupTag):
+        if writeLookupTag:
+            self._handleBreakBefore("addLookup")
+            # start
+            s = "lookup %s {" % name
+            self._text += self._indentText([s])
         # store the new writer
         self._text.append(writer)
         # close
-        s = "} %s;" % name
-        self._text += self._indentText([s])
-        self._identifierStack.append("addLookup")
+        if writeLookupTag:
+            s = "} %s;" % name
+            self._text += self._indentText([s])
+            self._identifierStack.append("addLookup")
         return writer
 
     # lookup flag
