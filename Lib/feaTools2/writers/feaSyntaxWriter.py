@@ -409,7 +409,7 @@ class FeaSyntaxWriter(AbstractWriter):
 
     def addLookup(self, name):
         writer = self.__class__(whitespace=self._whitespace, filterRedundancies=self._filter)
-        writer._indent = self._indentLevel()
+        writer._indent = self._indentLevel() + 1
         # don't filter
         if not self._filter:
             self._addLookup(name, writer, True)
