@@ -1,3 +1,4 @@
+from feaTools2 import FeaToolsError
 from abstractWriter import AbstractWriter
 
 
@@ -17,6 +18,7 @@ needSpaceAfter = "addFeature addLookup addScript addLanguage setLookupReference"
 class FeaSyntaxWriter(AbstractWriter):
 
     def __init__(self, whitespace="\t", filterRedundancies=False):
+        self._featureName = None
         self._whitespace = whitespace
         self._indent = 0
         self._filter = filterRedundancies
@@ -289,6 +291,9 @@ class FeaSyntaxWriter(AbstractWriter):
     # script
 
     def addScript(self, name):
+        # aalt special handling
+        if self._featureName == "aalt":
+            return
         # don't filter
         if not self._filter:
             self._addScript(name)
@@ -321,6 +326,9 @@ class FeaSyntaxWriter(AbstractWriter):
     # language
 
     def addLanguage(self, name, includeDefault=True):
+        # aalt special handling
+        if self._featureName == "aalt":
+            return
         # don't filter
         if not self._filter:
             self._addLanguage(name, includeDefault)
@@ -379,6 +387,7 @@ class FeaSyntaxWriter(AbstractWriter):
 
     def addFeature(self, name):
         writer = self.__class__(whitespace=self._whitespace, filterRedundancies=self._filter)
+        writer._featureName = name
         writer._indent = self._indent + 1
         # don't filter
         if not self._filter:
@@ -408,6 +417,10 @@ class FeaSyntaxWriter(AbstractWriter):
     # lookup
 
     def addLookup(self, name):
+        # aalt special handling
+        if self._featureName == "aalt":
+            return self
+        # make a writer
         writer = self.__class__(whitespace=self._whitespace, filterRedundancies=self._filter)
         writer._indent = self._indentLevel() + 1
         # don't filter
@@ -454,6 +467,11 @@ class FeaSyntaxWriter(AbstractWriter):
         return self._initialLookupFlag
 
     def addLookupFlag(self, rightToLeft=False, ignoreBaseGlyphs=False, ignoreLigatures=False, ignoreMarks=False, markAttachmentType=None):
+        # aalt special handling
+        if self._featureName == "aalt":
+            # make sure that there won't be data loss
+            assert True not in (rightToLeft, ignoreBaseGlyphs, ignoreLigatures, ignoreMarks, bool(markAttachmentType))
+            return
         # don't filter
         if not self._filter:
             self._addLookupFlag(rightToLeft, ignoreBaseGlyphs, ignoreLigatures, ignoreMarks, markAttachmentType)
@@ -509,6 +527,9 @@ class FeaSyntaxWriter(AbstractWriter):
     # lookup reference
 
     def addLookupReference(self, name):
+        # aalt special handling
+        if self._featureName == "aalt":
+            raise FeaToolsError("Lookup references are not allowed in the aalt feature.")
         # don't filter
         if not self._filter:
             self._addLookupReference(name)
