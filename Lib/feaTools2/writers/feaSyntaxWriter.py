@@ -582,7 +582,7 @@ class FeaSyntaxWriter(AbstractWriter):
             target = self._flattenSequence(target)
             substitution = item["substitution"][index]
             substitution = self._flattenSequence(substitution)
-            t = "sub %s from [%s];" % (target, substitution)
+            t = "sub %s from %s;" % (target, substitution)
             text.append(t)
         return text
 
