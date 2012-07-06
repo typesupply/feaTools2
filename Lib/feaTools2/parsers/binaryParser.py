@@ -1,4 +1,6 @@
-def parseTable(writer, table, tableTag):
+def parseTable(writer, table, tableTag, excludeFeatures=None):
+    if excludeFeatures is None:
+        excludeFeatures = []
     # first pass through the features
     features = {}
     for scriptRecord in table.ScriptList.ScriptRecord:
@@ -11,6 +13,8 @@ def parseTable(writer, table, tableTag):
         for index in featureIndexes:
             featureRecord = table.FeatureList.FeatureRecord[index]
             featureTag = featureRecord.FeatureTag
+            if featureTag in excludeFeatures:
+                continue
             lookupIndexes = featureRecord.Feature.LookupListIndex
             if featureTag not in features:
                 features[featureTag] = []
@@ -22,6 +26,8 @@ def parseTable(writer, table, tableTag):
             for index in featureIndexes:
                 featureRecord = table.FeatureList.FeatureRecord[index]
                 featureTag = featureRecord.FeatureTag
+                if featureTag in excludeFeatures:
+                    continue
                 lookupIndexes = featureRecord.Feature.LookupListIndex
                 if featureTag not in features:
                     features[featureTag] = []

@@ -31,13 +31,13 @@ To Do:
 class FeaToolsError(Exception): pass
 
 
-def decompileBinaryToObject(pathOrFile, compress=True):
+def decompileBinaryToObject(pathOrFile, compress=True, excludeFeatures=None):
     from fontTools.ttLib import TTFont
     from feaTools2.objects import Tables
     from feaTools2.parsers.binaryParser import parseTable
     # load font
     closeFont = True
-    if not isinstance(pathOrFile, TTFont):
+    if isinstance(pathOrFile, TTFont):
         font = pathOrFile
         closeFont = False
     else:
@@ -46,7 +46,7 @@ def decompileBinaryToObject(pathOrFile, compress=True):
     tables = Tables()
     if "GSUB" in font:
         table = tables["GSUB"]
-        parseTable(table, font["GSUB"].table, "GSUB")
+        parseTable(table, font["GSUB"].table, "GSUB", excludeFeatures=excludeFeatures)
         if compress:
             table.compress()
     # close
@@ -56,10 +56,10 @@ def decompileBinaryToObject(pathOrFile, compress=True):
     return tables
 
 
-def decompileBinaryToFeaSyntax(pathOrFile):
+def decompileBinaryToFeaSyntax(pathOrFile, excludeFeatures=None):
     from feaTools2.writers.feaSyntaxWriter import FeaSyntaxWriter
     # decompile
-    tables = decompileBinaryToObject(pathOrFile)
+    tables = decompileBinaryToObject(pathOrFile, excludeFeatures=excludeFeatures)
     # write
     writer = FeaSyntaxWriter(filterRedundancies=True)
     tables["GSUB"].write(writer)
