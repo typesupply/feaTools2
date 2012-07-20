@@ -844,3 +844,36 @@ Feature: TST1
                     target: [[[C] [D]]]
                     substitution: [[[E]]]
 """.strip()
+
+gsubType65_fea = """
+languagesystem DFLT dflt;
+feature TST1 {
+    sub A' B' X by C;
+    sub E' F' X by G;
+} TST1;
+""".strip()
+
+gsubType65_dump = """
+LanguageSystem: DFLT None
+    Feature: TST1
+        Script: DFLT
+            Language: None
+                Include Default: True
+                Lookup: TST1_1
+                    LookupFlag:
+                        rightToLeft: False
+                        ignoreBaseGlyphs: False
+                        ignoreLigatures: False
+                        ignoreMarks: False
+                        markAttachmentType: False
+                    GSUBSubtable Type 6:
+                        backtrack: []
+                        lookahead: [[X]]
+                        target: [[[A] [B]]]
+                        substitution: [[[C]]]
+                    GSUBSubtable Type 6:
+                        backtrack: []
+                        lookahead: [[X]]
+                        target: [[[E] [F]]]
+                        substitution: [[[G]]]
+""".strip()

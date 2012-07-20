@@ -144,6 +144,7 @@ def testGSUBType6():
     >>> compileDecompileCompareDumps(gsubType62_fea, gsubType62_dump)
     >>> compileDecompileCompareDumps(gsubType63_fea, gsubType63_dump)
     >>> compileDecompileCompareDumps(gsubType64_fea, gsubType64_dump)
+    >>> compileDecompileCompareDumps(gsubType65_fea, gsubType65_dump)
     """
 
 if __name__ == "__main__":

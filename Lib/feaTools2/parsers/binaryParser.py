@@ -211,14 +211,9 @@ def parseGSUBLookupType6(writer, table, tableTag, subtable):
                             newSubstitutionSequence.append(newSubstitutionClass)
                 elif loadedSubtable.type == 4:
                     if targetSequence != input:
-                        print
-                        print "GSUB question"
-                        print targetSequence
-                        print input
-                        print
-                    else:
-                        newTargetSequence = targetSequence
-                        newSubstitutionSequence = substitutionSequence
+                        continue
+                    newTargetSequence = targetSequence
+                    newSubstitutionSequence = substitutionSequence
                 else:
                     raise NotImplementedError
                 target.append(newTargetSequence)
