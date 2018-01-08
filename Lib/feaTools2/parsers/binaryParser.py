@@ -103,7 +103,7 @@ def parseSubtable(writer, table, tableTag, type, subtableRecord):
         elif type == 7:
             parseGSUBLookupType7(writer, subtableRecord)
         else:
-            raise FeaToolsError, "Unknown GSUB subtable type %d" % type
+            raise FeaToolsError("Unknown GSUB subtable type %d" % type)
     else:
         raise NotImplementedError
 

@@ -14,7 +14,7 @@ class Tables(object):
             return self._gsub
         if key == "GPOS":
             return self._gpos
-        raise KeyError, "Unknonw table %s." % key
+        raise KeyError("Unknonw table %s." % key)
 
 
 class Table(list):
@@ -254,21 +254,21 @@ class Feature(object):
 
     def addLanguage(self, name, includeDefault=True):
         if not self.scripts:
-            raise FeaToolsError, "A script must be defined before adding a language."
+            raise FeaToolsError("A script must be defined before adding a language.")
         self.scripts[-1].addLanguage(name, includeDefault=includeDefault)
 
     def addLookup(self, name):
         if not self.scripts:
-            raise FeaToolsError, "A script must be defined before adding a lookup."
+            raise FeaToolsError("A script must be defined before adding a lookup.")
         if not self.scripts[-1].languages:
-            raise FeaToolsError, "A language must be defined before adding a lookup."
+            raise FeaToolsError("A language must be defined before adding a lookup.")
         return self.scripts[-1].languages[-1].addLookup(name)
 
     def addLookupReference(self, name):
         if not self.scripts:
-            raise FeaToolsError, "A script must be defined before adding a lookup reference."
+            raise FeaToolsError("A script must be defined before adding a lookup reference.")
         if not self.scripts[-1].languages:
-            raise FeaToolsError, "A language must be defined before adding a lookup reference."
+            raise FeaToolsError("A language must be defined before adding a lookup reference.")
         self.scripts[-1].languages[-1].addLookupReference(name)
 
     # manipulation
