@@ -33,7 +33,7 @@ def compileDecompileCompareDumps(features, expectedDump):
         tables = decompileBinaryToObject(path, compress=True)
     # print compiler errors
     except TTLibError:
-        print errors
+        print(errors)
     # get rid of the temp file
     finally:
         os.remove(path)
@@ -47,15 +47,15 @@ def compileDecompileCompareDumps(features, expectedDump):
 def compareDumps(dump1, dump2):
     if dump1 == dump2:
         return
-    print
-    print "Expected:"
-    print "---------"
-    print dump1
-    print
-    print "Got:"
-    print "----"
-    print dump2
-    print
+    print()
+    print("Expected:")
+    print("---------")
+    print(dump1)
+    print()
+    print("Got:")
+    print("----")
+    print(dump2)
+    print()
     dump1 = dump1.splitlines()
     dump2 = dump2.splitlines()
     index = 0
@@ -64,8 +64,8 @@ def compareDumps(dump1, dump2):
             break
         if line1 != dump2[index]:
             break
-    print "First difference at line: %d" % (index + 1)
-    print
+    print("First difference at line: %d" % (index + 1))
+    print()
 
 # ------------------
 # Lookup Compression
