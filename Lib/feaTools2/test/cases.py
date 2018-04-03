@@ -855,25 +855,25 @@ feature TST1 {
 
 gsubType65_dump = """
 LanguageSystem: DFLT None
-    Feature: TST1
-        Script: DFLT
-            Language: None
-                Include Default: True
-                Lookup: TST1_1
-                    LookupFlag:
-                        rightToLeft: False
-                        ignoreBaseGlyphs: False
-                        ignoreLigatures: False
-                        ignoreMarks: False
-                        markAttachmentType: False
-                    GSUBSubtable Type 6:
-                        backtrack: []
-                        lookahead: [[X]]
-                        target: [[[A] [B]]]
-                        substitution: [[[C]]]
-                    GSUBSubtable Type 6:
-                        backtrack: []
-                        lookahead: [[X]]
-                        target: [[[E] [F]]]
-                        substitution: [[[G]]]
+Feature: TST1
+    Script: DFLT
+        Language: None
+            Include Default: True
+            Lookup: TST1_1
+                LookupFlag:
+                    rightToLeft: False
+                    ignoreBaseGlyphs: False
+                    ignoreLigatures: False
+                    ignoreMarks: False
+                    markAttachmentType: False
+                GSUBSubtable Type 6:
+                    backtrack: []
+                    lookahead: [[X]]
+                    target: [[[A] [B]]]
+                    substitution: [[[C]]]
+                GSUBSubtable Type 6:
+                    backtrack: []
+                    lookahead: [[X]]
+                    target: [[[E] [F]]]
+                    substitution: [[[G]]]
 """.strip()
